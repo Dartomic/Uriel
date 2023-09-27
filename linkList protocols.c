@@ -1,106 +1,121 @@
-
-// 1) Initialization
-// 2) Build out the node chain
-// 3) Add pages to nodes
-// 2) AND 3) Combined node adding and page adding
-// 4) Free pages from nodes
-// 5) Destroy the node chain 
-
-
-// 1 of 5: Initialization
-// template piece START 1
-    // At initialization, always set the node count to ZERO and call the
-    // node initializer.
-    struct st_node *lines = malloc(sizeof(struct st_node));
-    lines->total_nodes = ZERO;
-    lines = cs_node_intializer(lines);
-// template piece END
+/*
+1. Initialization
+Purpose: Initialize a new linked list and set the node count to zero.
+Steps:
+Allocate memory for a new linked list node.
+Set the total_nodes field to zero.
+Call the node initializer function.
+*/
+// Initialization
+struct st_node *list = malloc(sizeof(struct st_node));
+list->total_nodes = 0;
+list = cs_node_initializer(list);
 
 
-
-// 2 of 5: Build out the node chain
-// This can be within a data preparation loop that is for a new page to be added to a new link
-// template piece START 2
-    // Link a list of nodes together
-    int index = 0; // start index at zero.
-    // node_quantity is the number of nodes to add.
-    while (index < node_quantity)
-    {
-	    lines = cs_add(lines); // <--- This is the essential part of the loop
-	    ++index;
-    }
-    index = 0;
-    lines = cs_element_at(lines, index); // Probably want to go back to node zero
-// template piece END
+/*
+2. Build the Node Chain
+Purpose: Create a chain of nodes within a loop to prepare for adding pages.
+Steps:
+Initialize an index variable to zero.
+Use a loop to add nodes to the chain.
+Increment the index after adding each node.
+Optionally, reset the current node pointer to the head of the list.
+*/
+// Build the Node Chain
+int index = 0;
+int node_quantity = ...; // Define the number of nodes needed.
+while (index < node_quantity) {
+    list = cs_add(list); // Add a new node
+    ++index;
+}
+index = 0;
+list = cs_element_at(list, index); // Reset to the first node if needed.
 
 
 
-// 3 of 5: Add pages to nodes
-// This step can be combined with step 2.
-// template piece START 3
-    // Add the links to the nodes
-    lines = cs_element_at(lines, 0);
-    index = 0;
-    while (index < lines->total_nodes)
-    {
+/*
+3. Add Pages to Nodes
+Purpose: Populate each node in the linked list with data (pages).
+Steps:
+Access the current node.
+Allocate memory for the page data.
+Populate the page data.
+Optionally, move to the next node within the loop.
+*/
+// Add Pages to Nodes
+list = cs_element_at(list, 0); // Start at the first node
+index = 0;
+while (index < list->total_nodes) {
+    // Allocate memory for the page data
+    struct st_number *number = malloc(sizeof(struct st_number));
+    list->page = number;
 
-        // Part 1: These two lines are what is essential within the page adding loop.
-        struct st_number *number = malloc(sizeof(struct st_number));
-        lines->page = number;
+    // Populate the page data
+    ((struct st_number*)list->page)->number = index * 100;
 
-
-        // Part 2: Data manipulation can occur within the loop
-        ((struct st_number*)lines->page)->number = lines->index * 100;
-
-        // Part 3: Make sure to go to the next node to add a new page.
-        // In a loop that combines steps 2 and 3, this can simply be done by adding
-        // a new node to the chain before a page is added to the node.
-        ++index;
-        if (index < lines->total_nodes)
-            lines = cs_element_at(lines, index);
-    }
-    index = 0;
-    lines = cs_element_at(lines, index); // Probably want to go back to node zero
-// template piece END
-
-
-// Link protocols 2 of 5 AND 3 of 5: combined node adding and page adding
-    int index = 0;
-    int pages_needed = 10; // <--- how ever many nodes and pages are needed to be added to the linked list.
-    while (index < pages_needed)
-    {
-        // From step 2.
-	    lines = cs_add(lines); // Removes need for check of step 3, but step 3 depends a prepared chain.
+    // Move to the next node if needed
+    ++index;
+    if (index < list->total_nodes)
+        list = cs_element_at(list, index);
+}
+index = 0;
+list = cs_element_at(list, index); // Reset to the first node if needed.
 
 
-        // From step 3.
-        struct st_number *number = malloc(sizeof(struct st_number));
-        lines->page = number;
+/*
+4. Combined Node Adding and Page Adding
+Purpose: Simplify node and page creation within a loop by combining steps 2 and 3.
+Steps:
+Initialize an index variable to zero.
+Determine the number of nodes and pages needed.
+Use a loop to add nodes and populate pages.
+Increment the index after each iteration.
+*/
+// Combined Node Adding and Page Adding
+int index = 0;
+int pages_needed = ...; // Define the total number of nodes and pages needed.
+while (index < pages_needed) {
+    // Add a new node
+    list = cs_add(list);
 
-        // Data manipulation can be performed after this.
-        ++index;
-    }
+    // Allocate memory for the page data
+    struct st_number *number = malloc(sizeof(struct st_number));
+    list->page = number;
 
+    // Populate the page data if needed
 
-
-// 4 of 5: Free pages from the nodes
-// template piece START 4
-    // Clear links
-    index = ZERO;
-    while(index < lines->total_nodes)
-    {
-        lines = cs_element_at(lines, index);
-        free((struct st_number*)lines->page);
-        ++index;
-    }
-    index = 0;
-    lines = cs_element_at(lines, index); // Probably want to go back to node zero
-// template piece END
-
-
-// 5 of 5: Destroy the node chain
-// Test to see if I need the '*' symbol later
-cs_clear_nodes(lines);
-free(lines);
+    // Increment the index
+    ++index;
+}
 
 
+
+/*
+5. Free Pages from Nodes
+Purpose: Properly release memory allocated for pages within the nodes.
+Steps:
+Access each node within a loop.
+Free memory allocated for the page data.
+Optionally, reset the current node pointer to the head of the list.
+*/
+// Free Pages from Nodes
+index = 0;
+while (index < list->total_nodes) {
+    list = cs_element_at(list, index);
+    free((struct st_number*)list->page); // Free page data
+    ++index;
+}
+index = 0;
+list = cs_element_at(list, index); // Reset to the first node if needed.
+
+
+/*
+6. Destroy the Node Chain
+Purpose: Free memory associated with the entire linked list and its nodes.
+Steps:
+Use a function (e.g., cs_clear_nodes) to release memory for the linked list and nodes.
+Optionally, free the main list structure itself.
+*/
+// Destroy the Node Chain
+cs_clear_nodes(list); // Free memory for the entire linked list and its nodes
+free(list); // Optionally free the main list structure
