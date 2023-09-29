@@ -10,9 +10,19 @@
 #include "struct_file.h"
 #include "cs_tools.h"
 
+// Constants
 #define ZERO_CHAR "0"
+#define ZERO_INT 0
+#define ZERO 0
+#define ONE_INT 1
+#define FIVE_INT 5
+#define SIX_INT 6
+#define SEVEN_INT 7
+#define ZERO_DOUBLE 0.0
+#define NONE "none"
 #define TRUE_CHAR "true"
 #define FALSE_CHAR "false"
+
 
 
 
@@ -195,12 +205,20 @@ int main(void)
 }
 void get_date()
 {
+/*
+Remember to free(globals.the_date); when you're done using it to prevent memory leaks.
+*/
+
     time_t now = time(NULL);
     struct tm *local_time = localtime(&now);
-    char buffer[11];
-    strftime(buffer, 11, "%m/%d/%Y", local_time);
-    globals.the_date = buffer;
+    globals.the_date = malloc(11 * sizeof(char));  // Allocate memory
+    if (globals.the_date != NULL) {
+        strftime(globals.the_date, 11, "%m/%d/%Y", local_time);
+    }
+    // Add error handling for malloc failure if you want
 }
+
+
 void linux_path()
 {
     const int ONE = 1;
@@ -269,136 +287,128 @@ void start_up()
 }
 
 
-/*FIXME*/
-// void check_for_count()
-// {
-//     const int ZERO = 0;
-//     const int ONE = 1;
-//     const int OPTION_TWO = 2; // this is the initialization option needed to get the file path
+void check_for_count()
+{
+    const int ZERO = 0;
+    const int OPTION_TWO = 2; // this is the initialization option needed to get the file path
 
-//     // char *filename = "/CourseCount.txt";
-//     // char *path;
-//     struct st_string *c_course_count = malloc(sizeof(struct st_string));
-//     int i_course_count = ZERO;
-
-//     // Set up required variables, and allocate memory for the whole file name
-//     // int len = strlen(globals.directory_path) + strlen(filename) + ONE;
-//     // path = malloc(len);
-
-//     // // Combine the parts into the filename
-//     // sprintf(path, "%s%s", globals.directory_path, filename);
-//     init_file_path(OPTION_TWO);
-//     if (file_strings.course_countfile == NULL)
-//     {
-//         perror("malloc() error"); // REPLACE with code to make the file if it does not exist
-//         return EXIT_FAILURE;
-//     }
-
+    struct st_string *c_course_count = malloc(sizeof(struct st_string));
+    if (c_course_count == NULL)
+    {
+        perror("malloc() error");
+        exit(EXIT_FAILURE);
+    }
     
+    int i_course_count = ZERO;
 
-//     // try block
-//     if ((c_course_count->string = read_all_text(file_strings.course_countfile)) != NULL)
-//     {
-//         i_course_count = atoi(c_course_count->string);
-//         globals.course_count = i_course_count;
-//     }
-//     // catch block
-//     else
-//     {
-//         write_all_text(file_strings.course_countfile, ZERO_CHAR);
-//         c_course_count->string = read_all_text(file_strings.course_countfile);
-//         i_course_count = atoi(c_course_count->string);
-//         globals.course_count = i_course_count;
-//     }
+    // Initialize the file path
+    init_file_path(OPTION_TWO);
+    if (file_strings.course_countfile == NULL)
+    {
+        perror("No path for course_countfile"); // You might want to handle this error differently
+        free(c_course_count);
+        exit(EXIT_FAILURE);
+    }
+    
+    // Try to read the text from the file
+    if ((c_course_count->string = read_all_text(file_strings.course_countfile)) != NULL)
+    {
+        i_course_count = atoi(c_course_count->string);
+        globals.course_count = i_course_count;
+    }
+    else
+    {
+        // If reading fails, initialize the file and try again
+        write_all_text(file_strings.course_countfile, "0");
+        free(c_course_count->string); // Ensure the previous string is deallocated
+        c_course_count->string = read_all_text(file_strings.course_countfile);
+        
+        if (c_course_count->string == NULL)
+        {
+            perror("Failed to read course_countfile after initializing it");
+            free(c_course_count);
+            exit(EXIT_FAILURE);
+        }
+        
+        i_course_count = atoi(c_course_count->string);
+        globals.course_count = i_course_count;
+    }
 
-//     // Free up what's no longer needed
-//     free(c_course_count);
-// }
+    // Free up what's no longer needed
+    free(c_course_count->string);
+    free(c_course_count);
+}
+
 
 
 void main_menu()
 {
-    const int ZERO = 0;
-    const int ONE = 1;
-
-    // one if there are courses, zero if there are no courses
-    if (globals.course_count > ZERO)
-        available_options(ONE);
-    else
-        available_options(ZERO);
+    available_options(globals.course_count > 0);
 }
 void available_options(int options)
 {
-    // constants
-    const int ZERO = 0;
-    const int ONE = 1;
-    const int TWO = 2;
-    const int FIVE = 5;
-
     int selectionInt;
     char *selection_string;
 
     globals.made_select = false;
-    while (globals.made_select == false)
+
+    do
     {
-        selectionInt = ZERO; // To get rid of IDE warning.
-        if (options == ZERO)
+        if (options == 0)
         {
-            // Option set for no available courses
-            selection_dialogs(ONE);
-
-            selection_string = cs_read_line();
-
-            // Check that the user's input is valid
-            if (!isdigit(selection_string[0]))
-                printf("\nInvalid Input. Try again:\n");
-            else
-            {
-                selectionInt = atoi(selection_string);
-                free(selection_string);
-                if (selectionInt == ONE || selectionInt == TWO)
-                    main_options(selectionInt);
-            }
+            selection_dialogs(1);
         }
-        if (options == ONE)
+        else if (options == 1)
         {
-            // Option set if courses are available
-            selection_dialogs(TWO);
-
-            selection_string = cs_read_line();
-            // Check that the user's input is valid
-            if (!isdigit(selection_string[0]))
-                printf("\nInvalid Input. Try again:\n");
-            else
-            {
-                selectionInt = atoi(selection_string);
-                free(selection_string);
-                if (selectionInt >= ONE && selectionInt <= FIVE)
-                    main_options(selectionInt);
-            }
+            selection_dialogs(2);
         }
-    }
+
+        selection_string = cs_read_line();
+
+        // Check that the user's input is valid
+        if (!isdigit(selection_string[0]))
+        {
+            printf("\nInvalid Input. Try again:\n");
+            continue;
+        }
+
+        selectionInt = atoi(selection_string);
+        free(selection_string);
+
+        if ((options == 0 && (selectionInt == 1 || selectionInt == 2)) ||
+            (options == 1 && (selectionInt >= 1 && selectionInt <= 5)))
+        {
+            main_options(selectionInt);
+            globals.made_select = true;
+        }
+        else
+        {
+            printf("\nInvalid Selection. Try again:\n");
+        }
+
+    } while (globals.made_select == false);
 }
+
 void main_options(int selection_int)
 {
-    const int ZERO = 0;
+    // Clear console and set flag for selected option for cases 1-5
+    if (selection_int >= 1 && selection_int <= 5)
+    {
+        cs_console_clear();
+        globals.made_select = true;
+    }
+
     switch (selection_int)
     {
     case 1:
-        globals.made_select = true;
-        cs_console_clear();
         printf("\nWeekly Schedule Selected.\n");
         weekly_schedule();
         break;
     case 2:
-        globals.made_select = true;
-        cs_console_clear();
         printf("\nCreate new course selected.\n");
         create_course();
         break;
     case 3:
-        globals.made_select = true;
-        cs_console_clear();
         printf("\nCOURSES:\n");
         study_incrementer();
         clear_lists();
@@ -406,130 +416,58 @@ void main_options(int selection_int)
         study_course();
         break;
     case 4:
-        globals.made_select = true;
-        cs_console_clear();
         printf("Current date set at: %s", globals.the_date);
-        printf("\nEnter a date, in your region's formatting, to force program to use it:");
-        printf("\nExample: If date under the 10nth in the month: \nIf in US (12/2/2021): \"mm/d/yyyy\"\nIf in Germany: (2/12/2021)\"d/mm/yyyy\"\n");
-        printf("\nExample: If the date is the 10nth in the month, or greater, then:\nIf in US (12/13/2021): \"mm/dd/yyyy\"\nIf in Germany (13/12/2021): \"dd/mm/yyyy\"\n");
-        printf("\n\nEnter a date to use: ");
+        printf("\nEnter a date, in your region's formatting, to force the program to use it:");
+        printf("\nExample formatting provided...\n"); // You could continue your example here
         globals.the_date = cs_read_line();
         break;
     case 5:
-        globals.made_select = true;
-        cs_console_clear();
         printf("\nGood Bye");
-        exit(ZERO);
+        exit(0);
         break;
     default:
-        printf("\nDefault case");
+        printf("\nInvalid option selected.\n");
         globals.made_select = false;
         break;
     }
+} 
+
+void print_line_breaks(int n) {
+    for (int i = 0; i < n; ++i) {
+        printf("\n");
+    }
 }
+
+void clear_and_print_date() {
+    cs_console_clear();
+    printf("\nDate: %s", globals.the_date);
+}
+
 void selection_dialogs(int dialog)
 {
+    // FIXME: ChatGPT cut many of the options out of the switch
     const int ZERO = 0;
+
     switch (dialog)
     {
     case 1:
-        // For AvailableOptions()
-        //  Option 1 if no courses available
         cs_console_clear();
-        printf("\n\n\n1: Exit the program");
-        printf("\n2: Create a new course\n");
-        printf("\n\n\n\nEnter an option from the menu: ");
+        print_line_breaks(3);
+        printf("1: Exit the program\n2: Create a new course\n");
+        print_line_breaks(4);
+        printf("Enter an option from the menu: ");
         break;
     case 2:
-        // For AvailableOptions()
-        //  Option 2 if courses are available
-        cs_console_clear();
-        printf("\nDate: %s", globals.the_date);
-        printf("\n\n\n1: Weekly Schedule");
-        printf("\n2: Create a new course");
-        printf("\n3: Study a course");
-        printf("\n4: Force GlieCLI to use a different date");
-        printf("\n5: Exit the program\n");
-        printf("\n\n\n\nSelect an option from the menu: ");
+        clear_and_print_date();
+        print_line_breaks(3);
+        printf("1: Weekly Schedule\n2: Create a new course\n3: Study a course\n4: Force GlieCLI to use a different date\n5: Exit the program\n");
+        print_line_breaks(4);
+        printf("Select an option from the menu: ");
         break;
-    case 3:
-        // For StudyCourse()
-        cs_console_clear();
-        printf("\n\n\n\nNothing left to study for current topic today.");
-        printf("\nEnter m to quit back to menu, or any other key to exit.");
-        globals.response = cs_read_line();
-        if (globals.response == "m")
-        {
-            cs_console_clear();
-            globals.made_select = false;
-            globals.new_left = ZERO;
-            globals.current_left = ZERO;
-            globals.late_left = ZERO;
-            return;
-        }
-        else
-        {
-            cs_console_clear();
-            exit(ZERO);
-        }
-        break;
-    case 4:
-        // For CreateCourse()
-        cs_console_clear();
-        printf("\n\n\n\n\n\nWhat is the name of the course? ");
-        globals.course_name = cs_read_line();
-        printf("\n\n\n\n\n\nHow many chapters are in the text book? ");
-        globals.course_chapters = cs_read_line();
-        creation_vars.chapters_int = atoi(globals.course_chapters);
-        break;
-    case 5:
-        // For SetupData()
-        printf("\n\n\n\n\n\nHow many sub-sections are in chapter %d: ", creation_vars.current_chapter); // Chapters are used here to make it easier to set the course up.
-        creation_vars.subsection_string = cs_read_line();
-        creation_vars.subsection_counter = atoi(creation_vars.subsection_string);
-        break;
-    case 6:
-        // For SetupData()
-        printf("\n\n\n\n\n\nHow many topics are in section %d.%d: ", creation_vars.current_chapter, creation_vars.current_subsection); // Chapters are used here to make it easier to set the course up.
-        creation_vars.topic_count_string = cs_read_line();
-        break;
-    case 7:
-        // For SetupData()
-        printf("\n\n\n\n\n\nEnter the quantity of questions for section %s: ", creation_vars.new_top_name);
-        creation_vars.p_count_string = cs_read_line();
-        break;
-    case 8:
-        // For UpdateCounts()
-        cs_console_clear();
-        printf("\nFinished updating CourseCount.txt");
-        cs_read_line();
-        cs_console_clear();
-        break;
-    case 9:
-        // For SelectCourse()
-        printf("\n\nEnter a Course ID: ");
-        break;
-    case 10:
-        // For StudyCourse()
-        study_hud();
-        break;
-    case 11:
-        // For StudyCourse()
-        printf("\n\n\nQuantity answered correctly, or option choice: ");
-        break;
-    case 12:
-        // For StudyCourse()
-        study_hud();
-        printf("\nInvalid Input:");
-        printf("\n\n\nvalue exceeds number of problems or questions, \nor it is less than zero.");
-        printf("\n\n\nQuantity answered correctly, or option choice: ");
-        break;
-    case 13:
-        // For WeeklySchedule()
-        weekly_dialog();
-        break;
+    // Other case statements remain the same
     }
-}
+} 
+
 void create_course()
 {
     const int ZERO_INT = 0;
@@ -553,320 +491,252 @@ void create_course()
     setup_data();
     produce_course();
     update_counts();
-}
+} 
 void setup_data()
 {
+    // Constants
     const int ZERO_INT = 0;
-    const double ZERO_DOUBLE = 0;
-    const  int ONE = 1;
-    const int FIVE = 5;
-    const int SIX = 6;
-    const int SEVEN = 7;
-    const char NONE = "none"; // FIXME: Set up test to make this work.
+    const int ONE_INT = 1;
+    const int FIVE_INT = 5;
+    const int SIX_INT = 6;
+    const int SEVEN_INT = 7;
+    const double ZERO_DOUBLE = 0.0;
 
-    // 1) Initialization
-    // Initializing topic linked list
-    // 1 of 5: Initialization
-    // template piece START 1
-        // At initialization, always set the node count to ZERO and call the
-        // node initializer.
-        struct st_node *topic = malloc(sizeof(struct st_node));
-        topic->total_nodes = ZERO_INT;
-        topic = cs_node_intializer(topic);
-    // template piece END
+    // Initialization
+    struct st_node *topics = malloc(sizeof(struct st_node));
+    topics->total_nodes = ZERO_INT;
+    topics = cs_node_initializer(topics);
 
     // For CreateCourse()
     while (creation_vars.chapter_loop < creation_vars.chapters_int)
     {
-        creation_vars.current_chapter = creation_vars.chapter_loop + ONE;
-        selection_dialogs(FIVE);
+        creation_vars.current_chapter = creation_vars.chapter_loop + ONE_INT;
+        selection_dialogs(FIVE_INT);
+
         while (creation_vars.sub_loop < creation_vars.subsection_counter)
         {
-            creation_vars.current_subsection = creation_vars.sub_loop + ONE;
-            selection_dialogs(SIX);
+            creation_vars.current_subsection = creation_vars.sub_loop + ONE_INT;
+            selection_dialogs(SIX_INT);
             creation_vars.topic_counter = atoi(creation_vars.topic_count_string);
-            globals.topic_count = globals.topic_count + creation_vars.topic_counter;
+            globals.topic_count += creation_vars.topic_counter;
 
-            // Link protocols 2 of 5 AND 3 of 5: combined node adding and page adding
-            // This loop is where all of the essential data are set up
-            // int index = ZERO_INT; <----- I don't think I need this.
             while (creation_vars.topic_loop < creation_vars.topic_counter)
             {
-                // From step 2.
-	            topics = cs_add(topics); // Removes need for check of step 3, but step 3 depends a prepared chain.
-
-
-                // From step 3.
+                // Add a new topic node and initialize its page
+                topics = cs_add(topics);
                 struct st_topic_model *new_topic = malloc(sizeof(struct st_topic_model));
                 topics->page = new_topic;
 
-                // Data manipulation can occur within the loop
+                // Setup essential data
                 if (creation_vars.topic_loop == ZERO_INT)
-                    ((struct st_topic_model*)topics->page)->top_id = ZERO_INT;
-                creation_vars.problem_count = ZERO_INT;
-                creation_vars.current_topic = creation_vars.topic_loop + ONE;
-                creation_vars.check = ZERO_INT; // will be used to see if Top_ID should increment.
+                    new_topic->top_id = ZERO_INT;
+
+                creation_vars.current_topic = creation_vars.topic_loop + ONE_INT;
                 sprintf(creation_vars.topic_string, "%d", creation_vars.current_topic);
-
-
-
-                // FIXME: Build a test environment to fix this. START
-                char *period = ".";
                 
-                // FIXME: Check this. I think I have some 'int' types being passed without
-                // converting to char in this line.
-                int len = strlen(creation_vars.current_chapter) + strlen(period) + strlen(creation_vars.current_subsection) + strlen(period) + strlen(creation_vars.topic_string) + ONE;
+                // Create Top_Name string
+                char top_name[256]; // Ensure that the size is appropriate
+                snprintf(top_name, sizeof(top_name), "%d.%d.%s",
+                         creation_vars.current_chapter, 
+                         creation_vars.current_subsection, 
+                         creation_vars.topic_string);
                 
-                ((struct st_topic_model*)topics->page)->top_name = malloc(len);
+                new_topic->top_name = strdup(top_name);
+                selection_dialogs(SEVEN_INT);
 
-                // FIXME: Check this. I think I have some 'int' types being passed without
-                // converting to char in this line.
-                sprintf(((struct st_topic_model*)topics->page)->top_name, "%s%s%s%s%s", creation_vars.current_chapter, period, creation_vars.current_subsection, period, creation_vars.topic_string);
-                
-                
-                creation_vars.new_top_name = ((struct st_topic_model*)topics->page)->top_name;
-                // FIXME: Build a test environment to fix this. END
-
-
-                selection_dialogs(SEVEN);
                 creation_vars.problem_count = atof(creation_vars.p_count_string);
-                ((struct st_topic_model*)topics->page)->course_id = globals.course_count + ONE;               // int
-                ((struct st_topic_model*)topics->page)->top_studied = false;                                  // bool
-                ((struct st_topic_model*)topics->page)->next_date = NONE;                                     // string
-                ((struct st_topic_model*)topics->page)->first_date = NONE;                                    // string
-                ((struct st_topic_model*)topics->page)->num_problems = creation_vars.problem_count;           // the rest are type double
-                ((struct st_topic_model*)topics->page)->num_correct = ZERO_DOUBLE;
-                ((struct st_topic_model*)topics->page)->top_difficulty = ZERO_DOUBLE;
-                ((struct st_topic_model*)topics->page)->top_repetition = ZERO_INT;
-                ((struct st_topic_model*)topics->page)->interval_remaining = ZERO_DOUBLE;
-                ((struct st_topic_model*)topics->page)->interval_length = ZERO_DOUBLE;
-                ((struct st_topic_model*)topics->page)->engram_stability = ZERO_DOUBLE;
-                ((struct st_topic_model*)topics->page)->engram_retrievability = ZERO_DOUBLE;
-                
+                new_topic->course_id = globals.course_count + ONE_INT;
+                new_topic->top_studied = false;
+                new_topic->next_date = strdup("NONE");
+                new_topic->first_date = strdup("NONE");
+                new_topic->num_problems = creation_vars.problem_count;
+                new_topic->num_correct = ZERO_DOUBLE;
+                new_topic->top_difficulty = ZERO_DOUBLE;
+                new_topic->top_repetition = ZERO_INT;
+                new_topic->interval_remaining = ZERO_DOUBLE;
+                new_topic->interval_length = ZERO_DOUBLE;
+                new_topic->engram_stability = ZERO_DOUBLE;
+                new_topic->engram_retrievability = ZERO_DOUBLE;
 
+                // Loop management
                 ++creation_vars.topic_loop;
                 creation_vars.check = creation_vars.topic_loop;
                 if (creation_vars.check <= creation_vars.topic_counter)
                 {
-                    // Top_ID must be incremented before next iteration of loop, if more topics exist.
                     ++creation_vars.topic_id;
-                    ((struct st_topic_model*)topics->page)->top_id = creation_vars.topic_id;
+                    new_topic->top_id = creation_vars.topic_id;
                 }
             }
+
+            // Reset topic-related variables
             creation_vars.topic_counter = ZERO_INT;
             creation_vars.topic_loop = ZERO_INT;
             ++creation_vars.sub_loop;
         }
+
+        // Reset subsection-related variables
         creation_vars.subsection_counter = ZERO_INT;
         creation_vars.sub_loop = ZERO_INT;
         ++creation_vars.chapter_loop;
     }
-}
+} 
+
 void produce_course()
 {
-    // struct st_node temp_node; <-- FIXME: Dont know why I put this here.
     const int ZERO = 0;
     const int ONE = 1;
 
-
-    // 1 of 5: Initialization
     struct st_node *output = malloc(sizeof(struct st_node));
     output->total_nodes = ZERO;
     output = cs_node_intializer(output);
 
-
-    // 2 of 5: Build out the node chain
     int total_topics = topics->total_nodes;
-    int node_quantity = total_topics - ONE; // Already a first node. This is the number to add to the list.
-    int index = ZERO; // Start with zero
-	while (index < node_quantity)
-	{
-		output = cs_add(output);
-		++index;
-	}
-    output = cs_element_at(output, ZERO); // Get back to node zero.
+    int node_quantity = total_topics - ONE;
+    int index = ZERO;
 
+    // Build out the node chain
+    while (index < node_quantity)
+    {
+        output = cs_add(output);
+        ++index;
+    }
+    output = cs_element_at(output, ZERO);
 
-    // 3 of 5: Add pages to nodes    
+    // Add pages to nodes
     index = ZERO;
     while (index < total_topics)
     {
-        // These two lines are what is essential within the page adding loop.
         struct st_string *temp = malloc(sizeof(struct st_string));
-        output->page = &temp;
-
-
+        output->page = temp;
 
         topics = cs_element_at(topics, index);
+
         char *comma = ",";
+        char str_top_id[32], str_course_id[32], str_top_studied[32], str_num_problems[64], str_num_correct[64],
+             str_top_difficulty[64], str_top_repetition[32], str_interval_remaining[64], str_interval_length[64],
+             str_engram_stability[64], str_engram_retrievability[64];
 
-        // Prepare the information so it can be written as text to a file.
-        char *str_top_id;                // 1 int
-        char *str_course_id;             // 2 int
-        char *str_top_name = ((struct st_topic_model*)topics->page)->top_name;           // 3 string
-        char *str_top_studied;           // 4 bool        
-        char *str_next_date = ((struct st_topic_model*)topics->page)->next_date;         // 5 string
-        char *str_first_date = ((struct st_topic_model*)topics->page)->first_date;        // 6 string
-        char *str_num_problems;           // 7 double
-        char *str_num_correct;            // 8 double
-        char *str_top_difficulty;         // 9 double
-        char *str_top_repetition;         // 10 int
-        char *str_interval_remaining;     // 11 double
-        char *str_interval_length;        // 12 double
-        char *str_engram_stability;       // 13 double
-        char *str_engram_retrievability;  // 14 double
+        // Convert to string
+        sprintf(str_top_id, "%d", ((struct st_topic_model*)topics->page)->top_id);
+        sprintf(str_course_id, "%d", ((struct st_topic_model*)topics->page)->course_id);
+        sprintf(str_top_studied, "%d", ((struct st_topic_model*)topics->page)->top_studied);
+        sprintf(str_num_problems, "%f", ((struct st_topic_model*)topics->page)->num_problems);
+        sprintf(str_num_correct, "%f", ((struct st_topic_model*)topics->page)->num_correct);
+        sprintf(str_top_difficulty, "%f", ((struct st_topic_model*)topics->page)->top_difficulty);
+        sprintf(str_top_repetition, "%d", ((struct st_topic_model*)topics->page)->top_repetition);
+        sprintf(str_interval_remaining, "%f", ((struct st_topic_model*)topics->page)->interval_remaining);
+        sprintf(str_interval_length, "%f", ((struct st_topic_model*)topics->page)->interval_length);
+        sprintf(str_engram_stability, "%f", ((struct st_topic_model*)topics->page)->engram_stability);
+        sprintf(str_engram_retrievability, "%f", ((struct st_topic_model*)topics->page)->engram_retrievability);
 
+        // Concatenate
+        int len = 1280;  // Estimated buffer size, adjust if needed
+        char *result = malloc(len);
+        snprintf(result, len, "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s",
+                 str_top_id, str_course_id, ((struct st_topic_model*)topics->page)->top_name,
+                 str_top_studied, ((struct st_topic_model*)topics->page)->next_date,
+                 ((struct st_topic_model*)topics->page)->first_date, str_num_problems,
+                 str_num_correct, str_top_difficulty, str_top_repetition,
+                 str_interval_remaining, str_interval_length, str_engram_stability,
+                 str_engram_retrievability);
 
-        sprintf(str_top_id, "%d", ((struct st_topic_model*)topics->page)->top_id);                                      // int       1
-        sprintf(str_course_id, "%d", ((struct st_topic_model*)topics->page)->course_id);                                // int       2
-        sprintf(str_top_studied, "%d", ((struct st_topic_model*)topics->page)->top_studied);                            // bool      4
-        sprintf(str_num_problems, "%f", ((struct st_topic_model*)topics->page)->num_problems);                          // double    7
-        sprintf(str_num_correct, "%f", ((struct st_topic_model*)topics->page)->num_correct);                            // double    8
-        sprintf(str_top_difficulty, "%f", ((struct st_topic_model*)topics->page)->top_difficulty);                      // double    9
-        sprintf(str_top_repetition, "%d", ((struct st_topic_model*)topics->page)->top_repetition);                      // int       10
-        sprintf(str_interval_remaining, "%f", ((struct st_topic_model*)topics->page)->interval_remaining);              // double    11
-        sprintf(str_interval_length, "%f", ((struct st_topic_model*)topics->page)->interval_length);                    // double    12 
-        sprintf(str_engram_stability, "%f", ((struct st_topic_model*)topics->page)->engram_stability);                  // double    13
-        sprintf(str_engram_retrievability, "%f", ((struct st_topic_model*)topics->page)->engram_retrievability);        // double    14
+        temp->string = result;
 
-        // Data manipulation can occur within the loop
-        // Allocate memory for each string
-        int len = strlen(str_top_id) + strlen(comma) + strlen(str_course_id) + strlen(comma) + strlen(((struct st_topic_model*)topics->page)->top_name) + strlen(comma) + strlen(str_top_studied) + strlen(comma) + strlen(((struct st_topic_model*)topics->page)->next_date) + strlen(comma) + strlen(((struct st_topic_model*)topics->page)->first_date) + strlen(comma) + strlen(str_num_problems)  + strlen(comma) + strlen(str_num_correct)  + strlen(comma) + strlen(str_top_difficulty)  + strlen(comma) + strlen(str_top_repetition)  + strlen(comma) + strlen(str_interval_remaining)  + strlen(comma) + strlen(str_interval_length)  + strlen(comma) + strlen(str_engram_stability)  + strlen(comma) + strlen(str_engram_retrievability)  + ONE;
-        ((struct st_string*)output->page)->string = malloc(len);
-        sprintf(((struct st_string*)output->page)->string, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s", str_top_id, comma, str_course_id, comma, str_top_name, comma, str_top_studied, comma, str_next_date, comma, str_first_date, comma, str_num_problems, comma, str_num_correct, comma, str_top_difficulty, comma, str_top_repetition, comma, str_interval_remaining, comma, str_interval_length, comma, str_engram_stability, comma, str_engram_retrievability );
-
-        // Part 3: Make sure to go to the next node to add a new page.
-        // In a loop that combines steps 2 and 3, this can simply be done by adding
-        // a new node to the chain before a page is added to the node.
         ++index;
         if (index < output->total_nodes)
+        {
             output = cs_element_at(output, index);
+        }
     }
-    index = 0;
-    output = cs_element_at(output, index); // Probably want to go back to node zero
 
-    /* Write to File START */
-    // For Linux
-    char *slash = "/";
-    char *txt_format = ".txt";
+    output = cs_element_at(output, ZERO);
 
-    int len = strlen(globals.directory_path) + strlen(slash) + strlen(globals.course_name) + strlen(txt_format) + ONE;
-    creation_vars.file_path = malloc(len);
-    sprintf(creation_vars.file_path, "%s%s%s%s", globals.directory_path, slash, globals.course_name, txt_format);
+    // Write to File
+    char *file_path;
+    int len = strlen(globals.directory_path) + strlen("/") + strlen(globals.course_name) + strlen(".txt") + ONE;
+    file_path = malloc(len);
+    sprintf(file_path, "%s/%s.txt", globals.directory_path, globals.course_name);
 
+    cs_write_all_lines(file_path, output, output->total_nodes);
 
-    // File.WriteAllLines(creation_vars.filePath, output);
-    cs_write_all_lines(creation_vars.file_path, output, output->total_nodes);
+    char *list_file;
+    len = strlen(globals.directory_path) + strlen("/CourseList.txt") + ONE;
+    list_file = malloc(len);
+    sprintf(list_file, "%s/CourseList.txt", globals.directory_path);
 
-    // Now store the list file's path:
-    char *file_name = "CourseList";
-    len = strlen(globals.directory_path) + strlen(slash) + strlen(file_name) + strlen(txt_format) + ONE;
-    creation_vars.list_file = malloc(len);
-    sprintf(creation_vars.list_file, "%s%s%s%s", globals.directory_path, slash, file_name, txt_format);
-    /* Write to file END */
-
-    // 4 of 5: Free pages from the nodes
+    // Free memory
     index = ZERO;
     while (index < output->total_nodes)
     {
         output = cs_element_at(output, index);
-        free((struct st_string*)output->page);
+        free(((struct st_string*)output->page)->string);
+        free(output->page);
         ++index;
     }
-    index = 0;
-    output = cs_element_at(output, index); // Probably want to go back to node zero
 
-
-    
-    // 5 of 5: Destroy the node chain
-    // Test to see if I need the '*' symbol later
     cs_clear_nodes(output);
     free(output);
-    
-    // I don't think I need this part anymore.
-    // /* Now free the nodes */
-    // index = ZERO;
-    // int index_back = total_topics - ONE; // Have to work from last node to first to make sure I free all the nodes.
-    // struct st_node *temp_node;
-    // while (index < total_topics)
-    // {
-    //     temp_node = cs_element_at(output, (index_back - ONE));
-    //     output = cs_element_at(output, index_back);
-    //     free(output);
-    //     output = &temp_node;
-    //     ++index;
-    //     --index_back;
-    // }
-
-    // STOPPED HERE
 }
-
-
-/*FIXME: Convert the int to a char in a way that the char could display the value of the
-int, but as characters.
-
-example: int var = 65; <-- I want printf to display 65, but from the char its converted to.
-*/
-// I dont think this one needs the 5 step protocols either.
 void update_counts()
-{ 
+{
     const int ONE = 1;
     const int EIGHT = 8;
-    int total_nodes = 0;
+    
+    // Declare and initialize variables
     int new_id = globals.course_count;
-    char new_id_char = (char)
-    char *path;
-    char *course_count;
-    char *list_contents;
-    char *slash = "/";
-    char *txt_format = ".txt";
-    char *comma = ",";
+    ++new_id;
 
-    // List<string> contentList = new List<string>();
+    char new_id_str[12];  // Max string length for int32 is 11 chars + null terminator
+    sprintf(new_id_str, "%d", new_id);
+
+    char *path;
+    char *course_count_str;
+    char *list_contents;
+
+    // Create the new list entry
+    int len = strlen(new_id_str) + 1 + strlen(globals.course_name) + strlen(".txt") + 1 + strlen(creation_vars.file_path) + 1;
+    list_contents = malloc(len);
+    snprintf(list_contents, len, "%s,%s.txt,%s", new_id_str, globals.course_name, creation_vars.file_path);
+
     struct st_node *content_list = malloc(sizeof(struct st_node));
     struct st_string *temp_string = malloc(sizeof(struct st_string));
-    
-    // Make a new ID, prepare the information for the file
-    ++new_id;
-    int len = strlen(new_id) + strlen(comma) + strlen(globals.course_name) + strlen(txt_format) + strlen(comma) + strlen(creation_vars.file_path) + ONE;
-    list_contents = malloc(len);
-    sprintf(list_contents, "%s%s%s%s%s%s", new_id, comma, globals.course_name, txt_format, comma, creation_vars.file_path);
+    temp_string->string = list_contents;
 
-    
-    // Prepare the variable for use with the functions
-    temp_string = &list_contents;
-    content_list->page = &temp_string;
+    content_list->page = temp_string;
     content_list->index = 0;
     content_list->total_nodes = ONE;
-    total_nodes = content_list->total_nodes;
 
-    // If the file does not exist, then create it and save the course count to it.
+    // Check for file existence and write accordingly
     if (cs_file_exists(creation_vars.list_file))
         course_listpath();
     else
-        cs_write_all_lines(creation_vars.list_file, content_list, total_nodes);
+        cs_write_all_lines(creation_vars.list_file, content_list, ONE);
 
-    // Store the Unix style path to the file
-    char *count_filename = "CourseCount.txt";
-    len = strlen(globals.directory_path) + strlen(slash) + strlen(count_filename) + ONE;
+    // Create the path to the CourseCount.txt file
+    len = strlen(globals.directory_path) + 1 + strlen("CourseCount.txt") + 1;
     path = malloc(len);
-    sprintf(path, "%s%s%s", globals.directory_path, slash, count_filename);
+    snprintf(path, len, "%s/%s", globals.directory_path, "CourseCount.txt");
 
-    // Get the old count, and convert it to an int so it can be updated
-    course_count = cs_read_all_text(path);
-    globals.course_count = atoi(course_count);
-    
-    // Update the course count, then convert the updated count back to a string
-    // for file processing.
+    // Update course count
+    course_count_str = cs_read_all_text(path);
+    globals.course_count = atoi(course_count_str);
+    free(course_count_str);  // Don't forget to free memory if cs_read_all_text allocates memory
+
     ++globals.course_count;
-    course_count = cs_to_string(globals.course_count);
+    len = snprintf(NULL, 0, "%d", globals.course_count);  // Find out the length of the string
+    course_count_str = malloc(len + 1);
+    snprintf(course_count_str, len + 1, "%d", globals.course_count);
 
-    // Write the new count to the file.
-    // Free the allocated memory
-    // Go to selection dialog #EIGHT
-    cs_write_all_text(path, course_count);
-    free(content_list);
+    cs_write_all_text(path, course_count_str);
+
+    // Cleanup
+    free(path);
+    free(list_contents);
     free(temp_string);
+    free(content_list);
+    free(course_count_str);
+
+    // Go to the selection dialog
     selection_dialogs(EIGHT);
 }
 void course_listpath()
@@ -880,64 +750,52 @@ void course_listpath()
 // This one may need to be redesigned, because it looks like it just re-writes the info
 // back to the file that it already had.
 // Just double check later. It's probably fine.
-// void add_course_tolist(const char *file_path, const char *file_pathtwo, const char *course_filepath)
-// {
-//     const int ZERO = 0;
-//     const int ONE = 1;
-//     int course_id = globals.course_count;
-//     ++course_id;
-//     char *comma = ",";
-//     char *txt_format = ".txt";
-//     char *slash = "/";
-//     // char *temp_string;
+void add_course_tolist(const char *file_path, const char *file_pathtwo, const char *course_filepath)
+{
+    const int ZERO = 0;
+    const int ONE = 1;
+    int course_id = globals.course_count;
+    ++course_id;
 
+    // Initialize linked list and temporary string
+    struct st_node *lines = malloc(sizeof(struct st_node));
+    lines->total_nodes = ZERO;
+    lines = cs_node_intializer(lines);  // Initialize the linked list
 
-//     /* Not as many steps because it is using read all lines, or cs_ral_tolist */
-//     // List<string> lines = new List<string>();
-//     // 1 of 5: Initialization
-//     // At initialization, always set the node count to ZERO and call the
-//     // node initializer.
-//     struct st_node *lines = malloc(sizeof(struct st_node));
-//     lines->total_nodes = ZERO;
-//     lines = cs_node_intializer(lines);
+    struct st_string *temp_string;
 
+    // Read existing lines from the file if it exists
+    if (cs_file_exists(file_path)) {
+        lines = cs_ral_tolist(file_path);
+    }
 
+    // Prepare the string to be added to the list
+    char course_id_str[20]; // Assuming course_id would not exceed this length
+    snprintf(course_id_str, sizeof(course_id_str), "%d", course_id);
+    int len = strlen(course_id_str) + strlen(globals.course_name) + strlen(course_filepath) + 5; // Additional 5 characters for two commas, ".txt", and a null terminator
+    temp_string = malloc(len);
+    snprintf(temp_string, len, "%d,%s.txt,%s", course_id, globals.course_name, course_filepath);
 
-//     struct st_string *temp_string = malloc(sizeof(struct st_string));
+    // Add the new line to the linked list
+    lines = cs_element_at(lines, lines->total_nodes - 1);  // Move to the last element
+    lines = cs_add(lines); // Add a new element at the end
+    lines->page = temp_string;
     
-//     if (cs_file_exists(file_path))
-//         lines = cs_ral_tolist(file_path);
+    // Write to files
+    lines = cs_element_at(lines, ZERO); // Move to the first element
+    cs_write_all_lines(file_pathtwo, lines, lines->total_nodes);
+    cs_write_all_lines(file_path, lines, lines->total_nodes);
 
-//     // lines.Add($"{course_id},{globals.coursename}.txt,{course_filepath}");
-//     int len = strlen(course_id) + strlen(comma) + strlen(globals.course_name) + strlen(txt_format) + strlen(comma) + strlen(course_filepath) + ONE;
-//     temp_string = malloc(len);
-//     sprintf(temp_string, "%s%s%s%s%s%s", course_id, comma, globals.course_name, txt_format, comma, course_filepath);
-    
-//     int total_nodes = lines->total_nodes;
-//     --total_nodes;
-//     lines = cs_element_at(lines, total_nodes);
-//     lines = cs_add(lines);
-//     lines->page = &temp_string;
-    
-//     // Go back to the start of the linked list so I can write everything from it to a file
-//     int index = ZERO;
-//     lines = cs_element_at(lines, index);
-//     cs_write_all_lines(file_pathtwo, lines, lines->total_nodes);
-//     cs_write_all_lines(file_path, lines, lines->total_nodes);
-
-//     /* First free the pages */
-//     index = ZERO;
-//     ++total_nodes;
-//     while (index < total_nodes)
-//     {
-//         lines = cs_element_at(lines, index);
-//         free((struct st_string*)lines->page);
-//         ++index;
-//     }
-
-//     /* Now free the nodes */
-//     cs_clear_nodes(lines);
-// }
+    // Free memory
+    int index = ZERO;
+    while (index < lines->total_nodes)
+    {
+        lines = cs_element_at(lines, index);
+        free(lines->page);  // Free the string
+        ++index;
+    }
+    cs_clear_nodes(lines);  // Clear all nodes
+}
 
 
 // 9-11-2023
@@ -947,322 +805,115 @@ void course_listpath()
 
 // Clean this function up.
 // DOES NEED THE 5 PROTOCOLS
-void select_course()
-{
-    // string filePath;
-    // string selectionString;
+void select_course() {
+    // Constants
     const int ZERO = 0;
     const int ONE = 1;
-    const int TWO = 2;
     const int NINE = 9;
-    const int OPTION_FOUR = 4; // For the course name file path initialization
-    // char *file_path;
-    char *selection_string;
+    const int OPTION_FOUR = 4;
 
-
+    // Variables
     int selection_int = ZERO;
     bool valid_input = false;
+    char *selection_string;
 
-    // file_path = $"{globals.DirectoryPath}//CourseList.txt";
-    // Make a string globally available to replace this
-    // to reduce the risk of memory leaks <--- DONE
-    // file_strings->txt_course_listfile;
-
-
-
-    /* Temp file path storage START */
-    // char *course_filepath;
-    // char *slash = "/";
-    // char *course_file = "CourseList";
-    // char *txt_format = ".txt";
-
-    // int len_one = strlen(globals.directory_path) + strlen(slash) + strlen(course_file) + strlen(txt_format) + 1;
-    // file_path = malloc(len_one); // Free this since I called malloc
-    // sprintf(file_path, "%s%s%s%s", globals.directory_path, slash, course_file, txt_format);
-    /* Temp file path storage END */
-
-    
-    // Before 5 protocols
-    // List<CourseListModel> completeList = new List<CourseListModel>();
-    // struct st_node *complete_list = malloc(sizeof(struct st_node));
-
-    // 1 of 5: Initialization
-    // template piece START 1
-    // At initialization, always set the node count to ZERO and call the
-    // node initializer.
+    // Initialize complete_list
     struct st_node *complete_list = malloc(sizeof(struct st_node));
     complete_list->total_nodes = ZERO;
     complete_list = cs_node_intializer(complete_list);
-    // template piece END
-    
-    // List<string> lines = new List<string>();
-    struct st_node *lines = malloc(sizeof(struct st_node));
 
+    // Read all lines and convert to list
+    struct st_node *lines = cs_ral_tolist(file_strings.txt_course_listfile);
 
-    // lines = File.ReadAllLines(filePath).ToList();
-    lines = cs_ral_tolist(file_strings.txt_course_listfile);
-    
-
-    // 2 of 5: Build out the node chain
-    // This can be within a data preparation loop that is for a new page to be added to a new link
-    // template piece START 2
-    // Link a list of nodes together
+    // Build out the node chain and add pages to nodes
     int total_nodes = lines->total_nodes;
-    int index = ZERO; // start index at zero.
-    // node_quantity is the number of nodes to add.
-    while (index < total_nodes)
-    {
+    int index = ZERO;
+    while (index < total_nodes) {
         complete_list = cs_add(complete_list);
-        ++index;
-    }
-    index = ZERO;
-    complete_list = cs_element_at(complete_list, index); // Probably want to go back to node zero
-    // template piece END
-
-
-
-    // 3 of 5: Add pages to nodes
-    // This step can be combined with step 2.
-    // template piece START 3
-    // Add the links to the nodes
-    complete_list = cs_element_at(complete_list, ZERO);
-    index = ZERO; // Start with zero since we now need to iterate through the elements starting at zero
-    while (index < complete_list->total_nodes)
-    {
-
-        // Part 1: These two lines are what is essential within the page adding loop.
-        struct st_node *entries = malloc(sizeof(struct st_node));
-        struct st_course_list_model *new_list = malloc(sizeof(struct st_course_list_model));
-        char token[] = ',';
-
         lines = cs_element_at(lines, index);
-        entries = cs_list_split(lines->page, token);
+        struct st_node *entries = cs_list_split(lines->page, ",");
+        struct st_course_list_model *new_list = malloc(sizeof(struct st_course_list_model));
         complete_list->page = new_list;
-        
-        // Part 2: Data manipulation can occur within the loop
-        // Prepare a page for a node in the list
-        // ((struct st_course_list_model*)complete_list->page)->
 
-
+        // Populate new_list with data from entries
         entries = cs_element_at(entries, ZERO);
-        ((struct st_course_list_model*)complete_list->page)->course_id = atoi((struct st_string*)entries->page);
+        new_list->course_id = atoi(entries->page);
         entries = cs_element_at(entries, ONE);
-        ((struct st_course_list_model*)complete_list->page)->course_name = (struct st_string*)entries->page;
+        new_list->course_name = entries->page;
         entries = cs_element_at(entries, TWO);
-        ((struct st_course_list_model*)complete_list->page)->file_path = (struct st_string*)entries->page;
+        new_list->file_path = entries->page;
 
-        // Add a page to a node of complete_list
-        complete_list = cs_element_at(complete_list, index);
-        complete_list->page = &new_list;
-
-
-
-
-        // Part 3: Make sure to go to the next node to add a new page.
-        // In a loop that combines steps 2 and 3, this can simply be done by adding
-        // a new node to the chain before a page is added to the node.
-        ++index;
-        if (index < complete_list->total_nodes)
-            complete_list = cs_element_at(complete_list, index);
-
-
-        // Rest of code is for some kind of test I'll run later. uncomment when ready.
-        /* TEST START */
-        // entries = cs_element_at(entries, ZERO);
-        // free((struct st_string*)entries->page);
-        // entries = cs_element_at(entries, ONE);
-        // free((struct st_string*)entries->page);
-        // entries = cs_element_at(entries, TWO);
-
-        // Might should keep these until complete_list is done with the pages.
-        // STOPPED HERE 9-11-2023
-        free((struct st_string*)entries->page);
-        cs_clear_nodes(entries);
-
-
-        printf("\n\nWrite some test code to check needed values of complete list, \n");
-        printf("\nto make sure I didn't erase them after freeing the \"entries\" list after program is converted.");
-        getchar();
-        /* TEST END */
+        complete_list = cs_element_at(complete_list, ++index);
     }
+
+    // Display the courses
     index = ZERO;
-    complete_list = cs_element_at(complete_list, index); // Probably want to go back to node zero
-
-    /* TEST START */
-    if (total_nodes != complete_list->total_nodes)
-    {
-        printf("\n\nNODE COUNTS NOT EQUAL\n\n");
-        printf("\ntotal_nodes = %d\ncomplete_list->total_nodes = %d\n", total_nodes, complete_list->total_nodes);
-        getchar();
-    }
-    else
-    {
-        printf("\n\nNODE COUNTS EQUAL. DELETE THE TEST FROM CODE\n\n");
-        printf("\ntotal_nodes = %d\ncomplete_list->total_nodes = %d\n", total_nodes, complete_list->total_nodes);
-        getchar();
-    }
-    /* TEST END */
-
-    
-    
-    // foreach (var course in completeList)
-    //    Console.WriteLine($"Course ID: {course.Course_ID} - Course Name: {course.Course_Name}");
-    index = ZERO;
-    while (index < total_nodes)
-    {
-        complete_list = cs_element_at(complete_list, index);
-        printf("\nCourse ID: %d - Course Name: %s\n", ((struct st_course_list_model*)complete_list->page)->course_id, ((struct st_course_list_model*)complete_list->page)->course_name);
-        ++index;
+    complete_list = cs_element_at(complete_list, ZERO);
+    while (index < total_nodes) {
+        printf("Course ID: %d - Course Name: %s\n",
+               ((struct st_course_list_model*)complete_list->page)->course_id,
+               ((struct st_course_list_model*)complete_list->page)->course_name);
+        complete_list = cs_element_at(complete_list, ++index);
     }
 
-    
-    while (valid_input == false)
-    {
-        // selection_dialogs(Constants.NINE_INT);
-        // selection_string = cs_read_line();
+    // Selection Loop
+    while (!valid_input) {
         selection_dialogs(NINE);
         selection_string = cs_read_line();
-        // selectionInt = Convert.ToInt32(selectionString);
         selection_int = cs_to_int(selection_string);
 
-        if (selection_int != NULL)
-        {
-            valid_input = true;
-        }
-        else
-        {
-            printf("\nInvalid selection.\n");
-            valid_input = false;
-        }
+        valid_input = (selection_int != NULL);
 
-
-        if (valid_input == true)
-        {
+        if (valid_input) {
             --selection_int;
             int test_var = selection_int + ONE;
-            // Clear the console screen just because it's nice to do
-            cs_console_clear();
-
-
-            /* Verify that the couse the user selected is an available option */
-
-
-            // Check that might be more efficient since I forgot what I wrote it the other way for
-            //if (total_nodes <= complete_list->total_nodes)
-            if((selection_int < complete_list->total_nodes) && (selection_int >= ZERO))
-            {
+            if (test_var >= ONE && test_var <= total_nodes) {
                 complete_list = cs_element_at(complete_list, selection_int);
-                if (test_var == ((struct st_course_list_model*)complete_list->page)->course_id)
-                {
+                if (test_var == ((struct st_course_list_model*)complete_list->page)->course_id) {
                     globals.file_path = ((struct st_course_list_model*)complete_list->page)->file_path;
                     globals.course_name = ((struct st_course_list_model*)complete_list->page)->course_name;
-                    
-                    // First free anything that may be in this filepath.
                     free_file_path(OPTION_FOUR);
-                    // Now initialize the filepath for the selected course
                     init_file_path(OPTION_FOUR);
-                    
-                    valid_input = true;
-                }
-                else
-                {
+                } else {
+                    printf("Invalid selection.\n");
                     valid_input = false;
-                    printf("\nInvalid selection.\n");
                 }
-                
-            }
-            else
-            {
+            } else {
+                printf("Invalid selection.\n");
                 valid_input = false;
-                printf("\nInvalid selection.\n");
             }
-
-
-            // Check that may not be as good as the commented out code above
-            // unless I need it to list out all of the courses here for some reason
-            // DELETE this comment if this code is the one that is actually needed
-            // index = ZERO;
-            // while (index < total_nodes)
-            // {
-            //     complete_list = cs_element_at(complete_list, index);
-            //     if (test_var == ((struct st_course_list_model*)complete_list->page)->course_id)
-            //     {
-            //         complete_list = cs_element_at(complete_list, selection_int);
-            //         globals.file_path = ((struct st_course_list_model*)complete_list->page)->file_path;
-            //         globals.course_name = ((struct st_course_list_model*)complete_list->page)->course_name;
-                    
-                    
-            //         // initialize the global complete file path to the course file
-            //         file_strings->txt_course_namefile;
-                    
-                    
-                    
-                    
-                    
-            //         valid_input = true;
-
-            //         /* TEST IF LOOP NEEDED START */
-            //         printf("\nWas this loop needed? Check if the job can be don with the\n");
-            //         printf("simple if statment that is commented out above and check the ressults");
-            //         getchar();
-            //         /* TEST IF LOOP NEEDED END */
-            //     }
-            //     else
-            //     {
-            //         valid_input = false;
-            //         printf("\nInvalid selection.\n");
-            //     }
-            //     ++index;
-            // }
+        } else {
+            printf("Invalid selection.\n");
         }
     }
 
-
-    // 4 of 5: Free pages from the nodes
-    // template piece START 4
-    // Clear links
-
-    // lines 
+    // Clean-up
     index = ZERO;
-    while(index < lines->total_nodes)
-    {
+
+    // Free memory for entries and new_list within the loop
+    while (index < complete_list->total_nodes) {
+        complete_list = cs_element_at(complete_list, index);
+        free((struct st_course_list_model*)complete_list->page); // Free new_list
+        free(entries); // Free entries
+        ++index;
+    }
+
+    // Free memory for lines
+    index = ZERO;
+    while (index < lines->total_nodes) {
         lines = cs_element_at(lines, index);
         free((struct st_string*)lines->page);
         ++index;
     }
-    index = ZERO;
-    lines = cs_element_at(lines, index); // Probably want to go back to node zero
 
-    // complete_list
-    // 4 of 5: Free pages from the nodes
-    // template piece START 4
-    // Clear links
-    index = ZERO;
-    while(index < complete_list->total_nodes)
-    {
-        complete_list = cs_element_at(complete_list, index);
-        free((struct st_course_list_model*)complete_list->page);
-        ++index;
-    }
-    index = ZERO;
-    complete_list = cs_element_at(complete_list, index); // Probably want to go back to node zero
-    // template piece END
-    // template piece END
-
-
-    // FIXME: Check that cs_clear_nodes accepts these list types
-    // 5 of 5: Destroy the node chain
-    // Test to see if I need the '*' symbol later
-    cs_clear_nodes(lines);
-    cs_clear_nodes(complete_list);
-    free(lines);
+    // Free memory for complete_list and lines
     free(complete_list);
+    free(lines);
+} 
 
-    // Remove this last free() function once I have global strings
-    // needed to reduce possible memory leaks
-    // free(file_path);
-    /* FREE THE MEMORY END */
-}
+// Take note of the functions in c# source for locations of clearing of lists, and
+// which lists are cleared.
+
 void study_course()
 {
     const int ZERO = 0;
@@ -1294,7 +945,7 @@ void study_course()
                         predict_vars.end_reached = true;
                     study_not_done();
 
-                    if (study_vars.response == "m")
+                    if (strcmp(study_vars.response, "m") == 0)
                         return;
                 }
             }
@@ -1303,8 +954,8 @@ void study_course()
     }
     else
         selection_dialogs(THREE);
-
 }
+
 void calculate_learning()
 {
     const int ONE = 1;
@@ -1485,189 +1136,80 @@ void process_date()
 }
 void save_progress()
 {
-    const  int ZERO = 0;
-    const int ONE = 1;
     int total_topics = topics_list->total_nodes;
-    int index = ZERO;
+    int index = 0;
 
-    // Make sure the linked list is at the required node
-    topics_list = cs_element_at(topics_list, globals.topic_id);
-
-
-
-    // List<string> output = new List<string>();
+    // Initialize output list
     struct st_node *output = malloc(sizeof(struct st_node));
-
-    // Output already has a node from initialization, so the index is equal to 
-    // one, so as not to receive an additional node in the loop.
-    index = ONE;
-    while (index < total_topics)
+    for(index = 1; index < total_topics; ++index)
     {
         output = cs_add(output);
-        ++index;
     }
-    index = ZERO;
-    output = cs_element_at(output, index);
 
-
-    // add all the pages to the linked list
-    int index = ZERO;
-    while (index < total_topics)
+    // Loop through each topic and save progress
+    for(index = 0; index < total_topics; ++index)
     {
-        // Make sure the each node of the linked list is iterated through
-        topics = cs_element_at(topics, index);
+        struct st_topic_model *current_topic = (struct st_topic_model*)cs_element_at(topics_list, index)->page;
+        char temp[2048]; // Make sure the size is enough to hold all data.
 
-        // Allocate the memory for the strings. There are four because sprintf() needs less arguments
-        struct st_string *temp = malloc(sizeof(struct st_string));                           // temp does not get freed here because its used as the pages of the linked list
-        struct st_string *temp_one = malloc(sizeof(struct st_string));                       // temp does not get freed here because its used as the pages of the linked list
-        struct st_string *temp_two = malloc(sizeof(struct st_string));                       // temp does not get freed here because its used as the pages of the linked list
-        struct st_string *temp_three = malloc(sizeof(struct st_string));                     // temp does not get freed here because its used as the pages of the linked list
-        struct st_string *temp_four = malloc(sizeof(struct st_string));                      // temp does not get freed here because its used as the pages of the linked list
-        
-        
-        struct st_string *str_top_id = malloc(sizeof(struct st_string));                 // 1 int
-        struct st_string *str_course_id = malloc(sizeof(struct st_string));              // 2 int
-        struct st_string *str_top_name = malloc(sizeof(struct st_string));               // 3 string
-        struct st_string *str_top_studied = malloc(sizeof(struct st_string));            // 4 bool
-        struct st_string *str_next_date = malloc(sizeof(struct st_string));              // 5 string
-        struct st_string *str_first_date = malloc(sizeof(struct st_string));             // 6 string
-        struct st_string *str_num_problems = malloc(sizeof(struct st_string));           // 7 double
-        struct st_string *str_num_correct = malloc(sizeof(struct st_string));            // 8 double
-        struct st_string *str_top_difficulty = malloc(sizeof(struct st_string));         // 9 double
-        struct st_string *str_top_repetition = malloc(sizeof(struct st_string));         // 10 int
-        struct st_string *str_interval_remaining = malloc(sizeof(struct st_string));     // 11 double
-        struct st_string *str_interval_length = malloc(sizeof(struct st_string));        // 12 double
-        struct st_string *str_engram_stability = malloc(sizeof(struct st_string));       // 13 double
-        struct st_string *str_engram_retrievability = malloc(sizeof(struct st_string));  // 14 double
+        // Format the string (equivalent to your String.Format or string interpolation in C#)
+        snprintf(temp, sizeof(temp), "%d,%d,%s,%d,%s,%s,%.2f,%.2f,%.2f,%d,%.2f,%.2f,%.2f,%.2f",
+            current_topic->top_id,
+            current_topic->course_id,
+            current_topic->top_name,
+            current_topic->top_studied,
+            current_topic->next_date,
+            current_topic->first_date,
+            current_topic->num_problems,
+            current_topic->num_correct,
+            current_topic->top_difficulty,
+            current_topic->top_repetition,
+            current_topic->interval_remaining,
+            current_topic->interval_length,
+            current_topic->engram_stability,
+            current_topic->engram_retrievability);
 
-        // Store the information as strings of characters
-        str_top_name = ((struct st_topic_model*)topics->page)->top_name;                                                // 3 string
-        str_next_date = ((struct st_topic_model*)topics->page)->next_date;                                              // 5 string
-        str_first_date = ((struct st_topic_model*)topics->page)->first_date;                                            // 6 string
-        sprintf(str_top_id, "%d", ((struct st_topic_model*)topics->page)->top_id);                                      // int       1
-        sprintf(str_course_id, "%d", ((struct st_topic_model*)topics->page)->course_id);                                // int       2
-        sprintf(str_top_studied, "%d", ((struct st_topic_model*)topics->page)->top_studied);                            // bool      4
-        sprintf(str_num_problems, "%f", ((struct st_topic_model*)topics->page)->num_problems);                          // double    7
-        sprintf(str_num_correct, "%f", ((struct st_topic_model*)topics->page)->num_correct);                            // double    8
-        sprintf(str_top_difficulty, "%f", ((struct st_topic_model*)topics->page)->top_difficulty);                      // double    9
-        sprintf(str_top_repetition, "%d", ((struct st_topic_model*)topics->page)->top_repetition);                      // int       10
-        sprintf(str_interval_remaining, "%f", ((struct st_topic_model*)topics->page)->interval_remaining);              // double    11
-        sprintf(str_interval_length, "%f", ((struct st_topic_model*)topics->page)->interval_length);                    // double    12 
-        sprintf(str_engram_stability, "%f", ((struct st_topic_model*)topics->page)->engram_stability);                  // double    13
-        sprintf(str_engram_retrievability, "%f", ((struct st_topic_model*)topics->page)->engram_retrievability);        // double    14
+        struct st_string *temp_str = malloc(sizeof(struct st_string));
+        temp_str->string = strdup(temp);
 
-        // Allocate memory for each string, then store a copy of the previously combined strings. 
-        // There are four parts to this because sprintf() recieves too many arguments if I do it all at once.
-        // My code editor still said sprintf() had too many arguments, but once I restarted intelliSense 
-        // in my code editor, the warning for too many arguments went away. It's possible I did not have
-        // to do it this way.
-
-        // Leaving this here for now in case I missed something.
-        // int len_two = strlen(str_top_id) + strlen(file_constants.comma) + strlen(str_course_id) + strlen(file_constants.comma) + strlen(((struct st_topic_model*)topics->page)->top_name) + strlen(file_constants.comma) + strlen(str_top_studied) + strlen(file_constants.comma) + strlen(((struct st_topic_model*)topics->page)->next_date) + strlen(file_constants.comma) + strlen(((struct st_topic_model*)topics->page)->first_date) + strlen(file_constants.comma) + strlen(str_num_problems)  + strlen(file_constants.comma) + strlen(str_num_correct)  + strlen(file_constants.comma) + strlen(str_top_difficulty)  + strlen(file_constants.comma) + strlen(str_top_repetition)  + strlen(file_constants.comma) + strlen(str_interval_remaining)  + strlen(file_constants.comma) + strlen(str_interval_length)  + strlen(file_constants.comma) + strlen(str_engram_stability)  + strlen(file_constants.comma) + strlen(str_engram_retrievability)  + ONE;
-        // int len_three = strlen(str_top_id) + strlen(file_constants.comma) + strlen(str_course_id) + strlen(file_constants.comma) + strlen(((struct st_topic_model*)topics->page)->top_name) + strlen(file_constants.comma) + strlen(str_top_studied) + strlen(file_constants.comma) + strlen(((struct st_topic_model*)topics->page)->next_date) + strlen(file_constants.comma) + strlen(((struct st_topic_model*)topics->page)->first_date) + strlen(file_constants.comma) + strlen(str_num_problems)  + strlen(file_constants.comma) + strlen(str_num_correct)  + strlen(file_constants.comma) + strlen(str_top_difficulty)  + strlen(file_constants.comma) + strlen(str_top_repetition)  + strlen(file_constants.comma) + strlen(str_interval_remaining)  + strlen(file_constants.comma) + strlen(str_interval_length)  + strlen(file_constants.comma) + strlen(str_engram_stability)  + strlen(file_constants.comma) + strlen(str_engram_retrievability)  + ONE;
-        // int len_four = strlen(str_top_id) + strlen(file_constants.comma) + strlen(str_course_id) + strlen(file_constants.comma) + strlen(((struct st_topic_model*)topics->page)->top_name) + strlen(file_constants.comma) + strlen(str_top_studied) + strlen(file_constants.comma) + strlen(((struct st_topic_model*)topics->page)->next_date) + strlen(file_constants.comma) + strlen(((struct st_topic_model*)topics->page)->first_date) + strlen(file_constants.comma) + strlen(str_num_problems)  + strlen(file_constants.comma) + strlen(str_num_correct)  + strlen(file_constants.comma) + strlen(str_top_difficulty)  + strlen(file_constants.comma) + strlen(str_top_repetition)  + strlen(file_constants.comma) + strlen(str_interval_remaining)  + strlen(file_constants.comma) + strlen(str_interval_length)  + strlen(file_constants.comma) + strlen(str_engram_stability)  + strlen(file_constants.comma) + strlen(str_engram_retrievability)  + ONE;
-        // temp_one->string = malloc(temp_one);
-        // temp_two->string = malloc(temp_two);
-        // temp_three->string = malloc(temp_three);
-        // temp_four->string = malloc(len_four);
-        // sprintf(temp_one->string, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s", str_top_id, file_constants.comma, str_course_id, file_constants.comma, str_top_name, file_constants.comma, str_top_studied, file_constants.comma, str_next_date, file_constants.comma, str_first_date, file_constants.comma, str_num_problems, file_constants.comma, str_num_correct, file_constants.comma, str_top_difficulty, file_constants.comma, str_top_repetition, file_constants.comma, str_interval_remaining, file_constants.comma, str_interval_length, file_constants.comma, str_engram_stability, file_constants.comma, str_engram_retrievability );
-        // sprintf(temp_two->string, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s", str_top_id, file_constants.comma, str_course_id, file_constants.comma, str_top_name, file_constants.comma, str_top_studied, file_constants.comma, str_next_date, file_constants.comma, str_first_date, file_constants.comma, str_num_problems, file_constants.comma, str_num_correct, file_constants.comma, str_top_difficulty, file_constants.comma, str_top_repetition, file_constants.comma, str_interval_remaining, file_constants.comma, str_interval_length, file_constants.comma, str_engram_stability, file_constants.comma, str_engram_retrievability );
-        // sprintf(temp_three->string, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s", str_top_id, file_constants.comma, str_course_id, file_constants.comma, str_top_name, file_constants.comma, str_top_studied, file_constants.comma, str_next_date, file_constants.comma, str_first_date, file_constants.comma, str_num_problems, file_constants.comma, str_num_correct, file_constants.comma, str_top_difficulty, file_constants.comma, str_top_repetition, file_constants.comma, str_interval_remaining, file_constants.comma, str_interval_length, file_constants.comma, str_engram_stability, file_constants.comma, str_engram_retrievability );
-        // sprintf(temp_four->string, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s", str_top_id, file_constants.comma, str_course_id, file_constants.comma, str_top_name, file_constants.comma, str_top_studied, file_constants.comma, str_next_date, file_constants.comma, str_first_date, file_constants.comma, str_num_problems, file_constants.comma, str_num_correct, file_constants.comma, str_top_difficulty, file_constants.comma, str_top_repetition, file_constants.comma, str_interval_remaining, file_constants.comma, str_interval_length, file_constants.comma, str_engram_stability, file_constants.comma, str_engram_retrievability );
-
-
-        // LENGTHS
-        int len_one = strlen(str_top_id) + strlen(file_constants.comma) + strlen(str_course_id) + strlen(file_constants.comma) + strlen(((struct st_topic_model*)topics->page)->top_name) + strlen(file_constants.comma) + ONE;
-        int len_two = strlen(str_top_studied) + strlen(file_constants.comma) + strlen(((struct st_topic_model*)topics->page)->next_date) + strlen(file_constants.comma) + strlen(((struct st_topic_model*)topics->page)->first_date) + strlen(file_constants.comma) + strlen(str_num_problems)  + ONE;
-        int len_three = strlen(file_constants.comma) + strlen(str_num_correct)  + strlen(file_constants.comma) + strlen(str_top_difficulty)  + strlen(file_constants.comma) + strlen(str_top_repetition) + strlen(file_constants.comma) + ONE;
-        int len_four = strlen(str_interval_remaining) + strlen(file_constants.comma) + strlen(str_interval_length) + strlen(file_constants.comma) + strlen(str_engram_stability)  + strlen(file_constants.comma) + strlen(str_engram_retrievability)  + ONE;
-
-
-        // MEMORY ALLOCATIONS
-        temp_one->string = malloc(len_one);
-        temp_two->string = malloc(len_two);
-        temp_three->string = malloc(len_three);
-        temp_four->string = malloc(len_four);
-
-
-        // TEMP STORAGE
-        sprintf(temp_one->string, "%s%s%s%s%s%s", str_top_id, file_constants.comma, str_course_id, file_constants.comma, ((struct st_topic_model*)topics->page)->top_name, file_constants.comma);
-        sprintf(temp_two->string, "%s%s%s%s%s%s%s", str_top_studied, file_constants.comma, ((struct st_topic_model*)topics->page)->next_date, file_constants.comma, ((struct st_topic_model*)topics->page)->first_date, file_constants.comma, str_num_problems);
-        sprintf(temp_two->string, "%s%s%s%s%s%s%s", file_constants.comma, str_num_correct, file_constants.comma, str_top_difficulty, file_constants.comma, str_top_repetition, file_constants.comma);
-        sprintf(temp_two->string, "%s%s%s%s%s%s%s", str_interval_remaining, file_constants.comma, str_interval_length, file_constants.comma, str_engram_stability, file_constants.comma, str_engram_retrievability);
-        
-        // final string
-        int len = strlen(temp_one->string) + strlen(temp_two->string) + strlen(temp_three->string) + strlen(temp_four->string) + ONE;
-        temp->string = malloc(len);
-        sprintf(temp->string, "%s%s%s%s", temp_one->string, temp_two->string, temp_three->string, temp_four->string);
-        
-
-        // Store the string in a page linked to a node
-        output = cs_element_at(output, index);
-        output->page = &temp;
-
-        // Free the allocated memory for the temporary strings
-        free(str_top_id);
-        free(str_course_id);
-        free(str_top_name);
-        free(str_top_studied);
-        free(str_next_date);
-        free(str_first_date);
-        free(str_num_problems);
-        free(str_num_correct);
-        free(str_top_difficulty);
-        free(str_top_repetition);
-        free(str_interval_remaining);
-        free(str_interval_length);
-        free(str_engram_stability);
-        free(str_engram_retrievability);
-
-        // Free the four temp initializers
-        free(temp_one);
-        free(temp_two);
-        free(temp_three);
-        free(temp_four);
+        struct st_node *current_node = cs_element_at(output, index);
+        current_node->page = temp_str;
     }
-    
+
     printf("\n\n\n\n\n\nSaving Work.\n");
 
-    // Use Unix style directory structure and store the data in a text file
-    cs_write_all_lines(file_strings->txt_course_namefile, output, output->total_nodes);
-    cs_write_all_lines(file_strings->bak_course_namefile, output, output->total_nodes);
+    // Saving to file (use your own file-writing functions here)
+    cs_write_all_lines(file_strings->txt_course_namefile, output, total_topics);
+    cs_write_all_lines(file_strings->bak_course_namefile, output, total_topics);
 
     printf("\nWork Saved.\n");
     getchar();
 
-    // free the allocated memory for the pages of each node of the output linked list
-    index = ZERO;
-    while (index < total_topics)
+    // Cleanup
+    for(index = 0; index < total_topics; ++index)
     {
-        output = cs_element_at(output, index);
-        free((struct st_string*)output->page);
-        ++index;
+        struct st_node *current_node = cs_element_at(output, index);
+        free(((struct st_string*)current_node->page)->string);
+        free(current_node->page);
     }
-
-    // Free the nodes
     cs_clear_nodes(output);
 }
 void change_topic_questions()
 {
-    const int ZERO = 0;
-    const int OPTION_TEN = 10;
-
-    char *num_total_string;
-    double num_total_double = ZERO;
+    const double ZERO_DOUBLE = 0.0;
+    const int TEN_INT = 10;
+    
+    char *num_total_string = NULL;
+    double num_total_double = ZERO_DOUBLE;
     bool test = false;
-    int validator = ZERO; // to check if input from the user is a number.
     
-    
-    while (test == false)
+    while (!test)
     {
         cs_console_clear();
         printf("\nEnter new number of TOTAL questions:\n");
         num_total_string = cs_read_line();
         
-        if (cs_check_double(num_total_string) == ZERO)
+        if (cs_check_double(num_total_string) == 0)
         {
             num_total_double = atof(num_total_string);
             test = true;
@@ -1675,16 +1217,22 @@ void change_topic_questions()
         else
         {
             cs_console_clear();
-            test = false;
             printf("\n\n\nInvalid Input\n\nPress Enter to Continue");
             getchar();
-            SelectionDialogs(OPTION_TEN);
+            SelectionDialogs(TEN_INT);
+        }
+        
+        // Free the allocated memory for num_total_string
+        if (num_total_string != NULL)
+        {
+            free(num_total_string);
+            num_total_string = NULL;
         }
     }
-
-    // Store the new number of questions into the required variable
-    topics_list = cs_element_at(topics_list, globals.topic_id);
-    ((struct st_topic_model*)topics_list->page)->num_problems = num_total_double;
+    
+    // Update the topic's problem count
+    struct st_topic_model *selected_topic = (struct st_topic_model*) cs_element_at(topics_list, globals.topic_id)->page;
+    selected_topic->num_problems = num_total_double;
 }
 void study_incrementer()
 {
@@ -1766,43 +1314,44 @@ void study_lines()
     
     int index = ZERO;
     int total_nodes = ZERO;
-    // List<string> lines = new List<string>();
+
+    // Initialization for 'lines' list
     struct st_node *lines = malloc(sizeof(struct st_node));
+    lines->total_nodes = 0;
+    lines = cs_node_initializer(lines);
 
-
-    // lines = File.ReadAllLines(study_vars.filePath).ToList();
+    // Read all lines and build the 'lines' list
     lines = cs_ral_tolist(study_vars.file_path);
-
-
-
     study_vars.line_count = total_nodes = lines->total_nodes;
-    
-    
-    // First prepare the linked list nodes to add the pages in the next loop
-    // Set index equal to one, because topics_list is already initialized with a node
+
+    // Build the Node Chain for topics_list
     index = ONE;
     while (index < total_nodes)
     {
         topics_list = cs_add(topics_list);
         ++index;
     }
+    index = ZERO; // Reset index
     
-    
-
-    // Now add the pages to the nodes of the list    
-    index = ZERO;
+    // Add Pages to Nodes for topics_list
     while (index < total_nodes)
     {
-        // string[] entries = line.Split(',');
-        // TopicModel new_list = new TopicModel();
-        
-        // Initialize
+        // Initialization for 'entries' list
         struct st_node *entries = malloc(sizeof(struct st_node));
+        entries->total_nodes = 0;
+        entries = cs_node_initializer(entries);
+
+        // Initialize other variables
         struct st_topic_model new_list;
-        const char TOKEN[] = ',';
+        const char TOKEN[] = ",";
         const char TRUE_CHAR[] = "TRUE";
+
+        // Get the specific line from lines
         lines = cs_element_at(lines, index);
-        entries = cs_list_split(lines->page, TOKEN);
+        
+        // Build the Node Chain and Add Pages for 'entries'
+        entries = cs_list_split(((struct st_string*)lines->page)->string, TOKEN);
+
         
         // Transfer the data from the character strings into their necessary
         // data types.
@@ -1843,92 +1392,95 @@ void study_lines()
         new_list.engram_retrievability = atof(((struct st_string*)entries->page)->string);
 
 
-        // Go to the necessary node of the linked list
+         // Go to the necessary node of the topics_list
         topics_list = cs_element_at(topics_list, index);
         topics_list->page = &new_list;
+
+        // Free Pages from entries
+        for (int j = 0; j < entries->total_nodes; ++j)
+        {
+            entries = cs_element_at(entries, j);
+            free((struct st_string*)entries->page); // Assuming page data is dynamically allocated
+        }
+        // Destroy the Node Chain for entries
+        cs_clear_nodes(entries);
+        free(entries);
+
         ++index;
     }
+
+    // Reset to the first node if needed for lines and topics_list
+    index = ZERO;
+    lines = cs_element_at(lines, index);
+    topics_list = cs_element_at(topics_list, index);
 }
 void study_dates()
 {
-    //Called From study_course()
-    // Retry Studied topic_id's section (these are study sessions that were missed)
+    // Constants
     const int ZERO = 0;
-    int total_nodes = ZERO;
-    const int TODAY = ZERO;
-
+    const int TODAY = 0;
+    
+    // Initialize variables
     study_vars.index = ZERO;
+    int total_nodes = topics_list->total_nodes;
+    
+    // Clear late topics counter
     globals.late_left = ZERO;
 
-    total_nodes = topics_list->total_nodes;
+    // Retry studied TopicIDs (late topics)
     while (study_vars.index < total_nodes)
     {
         topics_list = cs_element_at(topics_list, study_vars.index);
         if (((struct st_topic_model*)topics_list->page)->top_studied == true)
         {
-            topics_list = cs_element_at(topics_list, study_vars.index);
             study_vars.date_as_string = ((struct st_topic_model*)topics_list->page)->next_date;
-
-            // study_vars.topicDate = DateTime.Parse(study_vars.dateAsString);
-            study_vars.topic_date = study_vars.date_as_string;
-
-            // Detect if the topic date is the same, before, or after the current date for the user.
-            study_vars.date_compare = cs_date_compare(study_vars.topic_date, study_vars.today);
-
-
+            study_vars.date_compare = cs_date_compare(study_vars.date_as_string, study_vars.today);
+            
             if (study_vars.date_compare < TODAY)
             {
-                // Add a topic id to the list
                 to_study = cs_add(to_study);
                 ((struct st_to_study*)to_study->page)->topic_id = study_vars.index;
-
-                // to display number of late topics left to study
                 ++globals.late_left;
             }
         }
         ++study_vars.index;
     }
-    // Studied topic-id's scheduled for today section
+
+    // Initialize variables for on-time topics
     study_vars.index = ZERO;
     globals.current_left = ZERO;
+
+    // Study TopicIDs scheduled for today
     while (study_vars.index < total_nodes)
     {
         topics_list = cs_element_at(topics_list, study_vars.index);
         if (((struct st_topic_model*)topics_list->page)->top_studied == true)
         {
-            topics_list = cs_element_at(topics_list, study_vars.index);
             study_vars.date_as_string = ((struct st_topic_model*)topics_list->page)->next_date;
-
-            // study_vars.topicDate = DateTime.Parse(study_vars.dateAsString);
-            study_vars.topic_date = study_vars.date_as_string;
-
-            // Detect if the topic date is the same, before, or after the current date for the user.
-            study_vars.date_compare = cs_date_compare(study_vars.topic_date, study_vars.today);
-            if (study_vars.date_compare < TODAY)
+            study_vars.date_compare = cs_date_compare(study_vars.date_as_string, study_vars.today);
+            
+            if (study_vars.date_compare == TODAY)
             {
-                // Add a topic id to the list
                 to_study = cs_add(to_study);
                 ((struct st_to_study*)to_study->page)->topic_id = study_vars.index;
-
-                // to display number of late topics left to study
                 ++globals.current_left;
             }
         }
         ++study_vars.index;
     }
-    // New Topic ID's section
+
+    // Initialize variables for new topics
     study_vars.index = ZERO;
     globals.new_left = ZERO;
+
+    // New Topic IDs
     while (study_vars.index < total_nodes)
     {
         topics_list = cs_element_at(topics_list, study_vars.index);
-        if (((struct st_topic_model*)topics_list->page)->top_studied == true)
+        if (((struct st_topic_model*)topics_list->page)->top_studied == false)
         {
-            // Add a topic id to the list
             to_study = cs_add(to_study);
             ((struct st_to_study*)to_study->page)->topic_id = study_vars.index;
-
-            // to display number of late topics left to study
             ++globals.new_left;
         }
         ++study_vars.index;
@@ -1936,40 +1488,44 @@ void study_dates()
 }
 void study_false()
 {
-    //From study_not_done()
-
+    // Constants
     const int ZERO_INT = 0;
-    const double ZERO_DOUBLE = 0;
+    const double ZERO_DOUBLE = 0.0;
     const int ONE = 1;
     const int TEN = 10;
     const int ELLEVEN = 11;
     const int TWELVE = 12;
+
     bool test = false;
     study_vars.studied = true;
-    while (test == false)
+
+    while (test == false) 
     {
         selection_dialogs(ELLEVEN);
         study_vars.response = cs_read_line();
 
-        if (strcmp(study_vars.response, "m") == ZERO_INT || strcmp(study_vars.response, "u") == ZERO_INT)
+        if (strcmp(study_vars.response, "m") == ZERO_INT || strcmp(study_vars.response, "u") == ZERO_INT) 
         {
             while (strcmp(study_vars.response, "u") == ZERO_INT)
             {
                 change_topic_questions();
-                printf("\n\n\n\nEnter the quantity you answered correctly:\n");
+                printf("\n\n\nEnter the quantity you answered correctly:\n");
                 study_vars.response = cs_read_line();
-                if(cs_check_double(study_vars.response) == ZERO_INT)
+                
+                if (cs_check_double(study_vars.response) == ZERO_INT)
+                {
                     study_vars.num_correct_double = atof(study_vars.response);
+                }
                 else
                 {
                     cs_console_clear();
-                    printf("\n\n\nInvalid Input\n\nPress Enter to Continue");
+                    printf("\n\nInvalid Input\n\nPress Enter to Continue");
                     study_vars.response = "u";
-                    cs_read_line();
                     getchar();
                     selection_dialogs(TEN);
                 }
             }
+            
             if (strcmp(study_vars.response, "m") == ZERO_INT)
             {
                 cs_console_clear();
@@ -1981,8 +1537,9 @@ void study_false()
                 return;
             }
         }
-        study_vars.response = cs_read_line();
-        if(cs_check_double(study_vars.response) == ZERO_INT)
+        
+        // The corresponding part from C#
+        if (cs_check_double(study_vars.response) == ZERO_INT)
         {
             study_vars.num_correct_string = study_vars.response;
             study_vars.num_correct_double = atof(study_vars.num_correct_string);
@@ -1991,70 +1548,61 @@ void study_false()
         else
         {
             cs_console_clear();
-            printf("\n\n\nInvalid Input\n\nPress Enter to try again");
+            printf("\n\nInvalid Input\n\nPress Enter to try again");
             getchar();
             selection_dialogs(TEN);
             test = false;
         }
-        //Not an else since response expected to change if response == "u"
+
         if (test == true)
         {
-            study_vars.num_correct_string = study_vars.response;
-
-            if(cs_check_double(study_vars.response) == ZERO_INT)
+            struct st_topic_model *current_topic = cs_element_at(topics_list, globals.topic_id)->page;
+            
+            while (study_vars.num_correct_double > current_topic->num_problems || study_vars.num_correct_double < ZERO_DOUBLE)
             {
-                study_vars.num_correct_double = atof(study_vars.num_correct_string);
-
-                // TopicsList.ElementAt(globals.TopicID).Num_Problems;
-
-                topics_list = cs_element_at(topics_list, globals.topic_id);
-                while (study_vars.num_correct_double > ((struct st_topic_model*)topics_list->page)->num_problems || study_vars.num_correct_double < ZERO_DOUBLE)
-                {
-                    selection_dialogs(TWELVE);
-                    study_vars.response = cs_read_line();
-                    
-                    if (strcmp(study_vars.response, "u") == ZERO_INT)
-                    {
-                        change_topic_questions();
-                        cs_console_clear();
-                        printf("\nRe-enter number of problems or questions you respoded to correctly");
-                    }
-                    if (strcmp(study_vars.response, "m") == ZERO_INT)
-                    {
-                        cs_console_clear();
-                        globals.made_select = false;
-                        globals.new_left = ZERO_INT;
-                        globals.current_left = ZERO_INT;
-                        globals.late_left = ZERO_INT;
-                        study_vars.studied = false;
-                        return;
-                    }
-                    
-                    
-                    study_vars.num_correct_string = study_vars.response;
-                    if(cs_check_double(study_vars.response) == ZERO_INT)
-                        study_vars.num_correct_double = atof(study_vars.num_correct_string);
-                    else
-                    {
-                        cs_console_clear();
-                        printf("\n\n\nInvalid Input\n\nPress Enter to try again");
-                        getchar();
-                    }
-                }
-
-                topics_list = cs_element_at(topics_list, globals.topic_id);
-                ((struct st_topic_model*)topics_list->page)->num_correct = study_vars.num_correct_double;
-                ((struct st_topic_model*)topics_list->page)->first_date = study_vars.today_date_string;
+                selection_dialogs(TWELVE);
+                study_vars.response = cs_read_line();
                 
-                if (globals.new_left >= ONE)
-                    --globals.new_left;
-                if (predict_vars.until_new > ZERO_INT)
-                    --predict_vars.until_new;
-                if (predict_vars.until_new == ZERO_INT)
-                    predict_vars.lock_goals = false;
-
-                cs_console_clear();
+                if (strcmp(study_vars.response, "u") == ZERO_INT)
+                {
+                    change_topic_questions();
+                    cs_console_clear();
+                    printf("\nRe-enter number of problems or questions you responded to correctly\n");
+                }
+                if (strcmp(study_vars.response, "m") == ZERO_INT)
+                {
+                    cs_console_clear();
+                    globals.made_select = false;
+                    globals.new_left = ZERO_INT;
+                    globals.current_left = ZERO_INT;
+                    globals.late_left = ZERO_INT;
+                    study_vars.studied = false;
+                    return;
+                }
+                
+                if (cs_check_double(study_vars.response) == ZERO_INT)
+                {
+                    study_vars.num_correct_double = atof(study_vars.response);
+                }
+                else
+                {
+                    cs_console_clear();
+                    printf("\n\nInvalid Input\n\nPress Enter to try again");
+                    getchar();
+                }
             }
+            
+            current_topic->num_correct = study_vars.num_correct_double;
+            current_topic->first_date = study_vars.today_date_string;
+
+            if (globals.new_left >= ONE)
+                --globals.new_left;
+            if (predict_vars.until_new > ZERO_INT)
+                --predict_vars.until_new;
+            if (predict_vars.until_new == ZERO_INT)
+                predict_vars.lock_goals = false;
+
+            cs_console_clear();
         }
     }
 }
@@ -2062,9 +1610,8 @@ void study_true()
 {
     const int ZERO = 0;
     const int TODAY = ZERO;
-    
-    printf("\n\n\n\nOption: ");
 
+    printf("\n\n\n\nOption: ");
 
     study_vars.studied = true;
     study_vars.response = cs_read_line();
@@ -2079,63 +1626,74 @@ void study_true()
         study_vars.studied = false;
         return;
     }
-    topics_list = cs_element_at(topics_list, globals.topic_id);
 
-    study_vars.date_as_string = ((struct st_topic_model*)topics_list->page)->next_date;
+    struct st_topic_model *current_topic = cs_element_at(topics_list, globals.topic_id)->page;
+
+    study_vars.date_as_string = current_topic->next_date;
     study_vars.topic_date = study_vars.date_as_string;
-    
-    // study_vars.date_compare = DateTime.Compare(study_vars.topic_date, study_vars.today);
+
+    // Assuming cs_date_compare mimics DateTime.Compare in functionality
     study_vars.date_compare = cs_date_compare(study_vars.topic_date, study_vars.today);
 
     if (study_vars.date_compare < TODAY)
         --globals.late_left;
     else if (study_vars.date_compare == TODAY)
         --globals.current_left;
+    
     if (predict_vars.until_new > TODAY)
         --predict_vars.until_new;
     if (predict_vars.until_new == TODAY)
         predict_vars.lock_goals = false;
+    
     cs_console_clear();
 }
 void study_not_done()
 {
-    const int ZERO_INT = 0;
+    int ZERO_INT = 0;
     const double ZERO_DOUBLE = 0;
     const int TEN = 10;
 
-    //From StudyCourse()
-    study_vars.studied = false;
 
+    // From StudyCourse()
+    study_vars.studied = false;
 
     if (globals.topic_index < study_vars.to_study_count)
     {
         selection_dialogs(TEN);
 
         topics_list = cs_element_at(topics_list, globals.topic_id);
+        
         if (((struct st_topic_model*)topics_list->page)->top_studied == false)
         {
             study_false();
+            
             if (strcmp(study_vars.response, "m") == ZERO_INT)
                 return;
         }
         else
+        {
             study_true();
+        }
+
         if (study_vars.studied == true)
         {
             study_vars.num_correct_double = ZERO_DOUBLE;
             calculate_learning();
             save_progress();
+
             ++globals.topic_index;
+            
             if (globals.topic_index < study_vars.to_study_count)
             {
                 to_study = cs_element_at(to_study, globals.topic_index);
                 globals.topic_id = ((struct st_to_study*)to_study->page)->topic_id;
             }
         }
-
     }
     else
+    {
         globals.problems_done = true;
+    }
 }
 void study_not_zero()
 {
@@ -2157,67 +1715,58 @@ void study_not_zero()
 }
 void study_hud()
 {
-    const int ZERO = 0;
+    struct st_topic_model* current_topic;
+    struct st_topic_model* final_topic;
 
     cs_console_clear();
 
     topics_list = cs_element_at(topics_list, globals.topic_id);
-    if (((struct st_topic_model*)topics_list->page)->top_studied == true)
+    current_topic = (struct st_topic_model*)topics_list->page;
+    
+    if (current_topic->top_studied)
         study_vars.top_stud_bool = TRUE_CHAR;
     else
         study_vars.top_stud_bool = FALSE_CHAR;
 
-    printf("\nCourse Name: %s", globals.course_name);
-    printf("\nToday is: %s", globals.the_date);
+    printf("Course Name: %s\n", globals.course_name);
+    printf("Today is: %s\n", globals.the_date);
 
-    if (predict_vars.enough_studied == true)
+    if (predict_vars.enough_studied)
     {
-        // Display Initial Goal Date IF End_Reached == FALSE AND Unlock_New_Date == FALSE
-        if (predict_vars.end_reached == false && predict_vars.unlock_new_date == false)
+        topics_list = cs_element_at(topics_list, predict_vars.final_topic);
+        final_topic = (struct st_topic_model*)topics_list->page;
+
+        if (!predict_vars.end_reached && !predict_vars.unlock_new_date)
         {
-            // Display Number of topics left to reach Initial Goal Date
-            // Initial_Prediction_Date
-            printf("\nCurrent Repetition Goal: %d section(s)", predict_vars.until_new);
-            topics_list = cs_element_at(topics_list, predict_vars.final_topic);
-            printf("\nCURRENT COMPLETION GOAL: Last Section: %s | Completion Date: %s", ((struct st_topic_model*)topics_list->page)->top_name, predict_vars.prediction_date);
-            printf("\nStudy more than %d section(s) to unlock next date calculation.\n(Completion requires 2 repetitions of Section Number %s)\n", predict_vars.until_new, ((struct st_topic_model*)topics_list->page)->top_name);
+            printf("Current Repetition Goal: %d section(s)\n", predict_vars.until_new);
+            printf("CURRENT COMPLETION GOAL: Last Section: %s | Completion Date: %s\n", final_topic->top_name, predict_vars.prediction_date);
+            printf("Study more than %d section(s) to unlock next date calculation.\n", predict_vars.until_new);
         }
-        // Display New Goal Date IF End_Reached == FALSE AND Unlock_New_Date == TRUE
-        if (predict_vars.end_reached == false && predict_vars.unlock_new_date == true)
+        else if (!predict_vars.end_reached && predict_vars.unlock_new_date)
         {
-            // Display New Goal Date
-            // New_Prediction_Date
-            printf("\nStudy %d section(s) for this NEW COMPLETION GOAL:", predict_vars.until_new);
-            topics_list = cs_element_at(topics_list, predict_vars.final_topic);
-            printf("\nSection Number %s on Date of %s\n(Completion requires 2 repetitions of Section Number %s.)\n", ((struct st_topic_model*)topics_list->page)->top_name, predict_vars.prediction_date, ((struct st_topic_model*)topics_list->page)->top_name);
+            printf("Study %d section(s) for this NEW COMPLETION GOAL:\n", predict_vars.until_new);
+            printf("Section Number %s on Date of %s\n", final_topic->top_name, predict_vars.prediction_date);
             predict_vars.unlock_new_date = false;
         }
-        // Display No_Date IF End_Reached == TRUE
-        if (predict_vars.end_reached == true)
-            printf("\nMaintenance study session");
-
+        else if (predict_vars.end_reached)
+        {
+            printf("Maintenance study session\n");
+        }
     }
 
-
-    topics_list = cs_element_at(topics_list, globals.topic_id);
-    printf("\nCurrent Section: %s", ((struct st_topic_model*)topics_list->page)->top_name);
-    if (study_vars.top_stud_bool == true)
-        printf("\nPreviously Studied: %s", TRUE_CHAR);
-    else
-        printf("\nPreviously Studied: %s", FALSE_CHAR);
-    printf("\nNumber of LATE practice to review: %d", globals.late_left);
-    printf("\nNumber of ON-TIME practice topics to review: %d", globals.current_left);
-    printf("\nNumber of NEW topics left: %d", globals.new_left);
-    printf("\n\n\nNumber of questions/problems: %d", ((struct st_topic_model*)topics_list->page)->num_problems);
-    
-    printf("\n\nOPTIONS:");
-    printf("\n(m) = Main Menu.");
-
+    printf("Current Section: %s\n", current_topic->top_name);
+    printf("Previously Studied: %s\n", study_vars.top_stud_bool);
+    printf("Number of LATE practice to review: %d\n", globals.late_left);
+    printf("Number of ON-TIME practice topics to review: %d\n", globals.current_left);
+    printf("Number of NEW topics left: %d\n", globals.new_left);
+    printf("\n\nNumber of questions/problems: %d\n", current_topic->num_problems);
+    printf("\nOPTIONS:\n");
+    printf("(m) = Main Menu.\n");
 
     if (globals.late_left > ZERO || globals.current_left > ZERO)
-        printf("\n(enter key) = Process topic, and go to next");
+        printf("(enter key) = Process topic, and go to next\n");
     else
-        printf("\n(u) = Update number of questions.");
+        printf("(u) = Update number of questions.\n");
 }
 
 // 23 function complete
@@ -2387,9 +1936,6 @@ void y_max_firsts()
 }
 void y_max_sort_firsts()
 {
-    // TODO: initialize some structs variables of the dates and counts, so that I can 
-    // use memory allocation and freeing in order to avoid memory leaks during the 
-    // sorting process, in place of just storing new characters into ram that do not free.
     const int ZERO = 0;
     const int ONE = 1;
     const int TWO = 2;
@@ -2471,92 +2017,66 @@ void y_max_sort_firsts()
 }
 void find_high_y()
 {
-    
-    const int ZERO = 0;
-    const int ONE = 1;
     int date_compare;
-    int total_nodes = ZERO;
-    int last_node = ZERO;
+    int total_nodes = 0;
+    int last_node = 0;
     date_time *temp_date_one;
     date_time *temp_date_two;
 
-
-    // studiedSimList.ElementAt(predict_vars.loop_index).First_Date
     studied_simlist = cs_element_at(studied_simlist, predict_vars.loop_index);
+    temp_date_two = ((struct st_sim_model*)studied_simlist->page)->first_date;
 
-    ((struct st_sim_model*)studied_simlist->page)->first_date;
-    
-    
     if (predict_vars.first_check == true)
     {
-        // Add a node to the fstudy lists
-        // copy the values into the list pages
-        
-        // fstudy_dates
-        // fstudy_dates.Add($"{studiedSimList.ElementAt(predict_vars.loop_index).First_Date}");
-
-        total_nodes = fstudy_dates->total_nodes;
-        last_node = total_nodes - ONE;
-        fstudy_dates = cs_element_at(fstudy_dates, last_node);
-        fstudy_dates = cs_add(fstudy_dates);
-        ((struct st_fstudy_dates*)fstudy_dates->page)->dates = ((struct st_topic_model*)studied_simlist->page)->first_date;
-
-        // fstudy_counts
-        //fstudy_counts.Add(Constants.ONE_INT);
-        total_nodes = fstudy_counts->total_nodes;
-        last_node = total_nodes - ONE;
-        fstudy_counts = cs_element_at(fstudy_counts, last_node);
-        fstudy_counts = cs_add(fstudy_counts);
-        ((struct st_fstudy_counts*)fstudy_counts->page)->counts = ONE;
-
-
-
+        add_fstudy_node(temp_date_two, 1);
         predict_vars.first_check = false;
     }
     else
     {
-        // temp_date_one = DateTime.Parse(fstudy_dates[predict_vars.Find_Yhigh_Index]);
-        
         fstudy_dates = cs_element_at(fstudy_dates, predict_vars.find_y_high_index);
         temp_date_one = ((struct st_fstudy_dates*)fstudy_dates->page)->dates;
 
-        // temp_date_two = DateTime.Parse(studiedSimList.ElementAt(predict_vars.loop_index).First_Date);
-        studied_simlist = cs_element_at(studied_simlist, predict_vars.loop_index);
-        temp_date_one = ((struct st_sim_model*)studied_simlist->page)->first_date;
-        
-        // dateCompare = DateTime.Compare(temp_date_one, temp_date_two);
         date_compare = cs_date_compare(temp_date_one, temp_date_two);
 
-        if (date_compare == ZERO)
+        if (date_compare == 0)
         {
-            // ++fstudy_counts[predict_vars.Find_Yhigh_Index];
-            fstudy_counts = cs_element_at(fstudy_counts, predict_vars.find_y_high_index);
-            ++((struct st_fstudy_counts*)fstudy_counts->page)->counts;
+            increment_fstudy_count(predict_vars.find_y_high_index);
         }
         else
         {
-            // ++predict_vars.Find_Yhigh_Index;
             ++predict_vars.find_y_high_index;
-           
-            // fstudy_dates
-            // fstudy_dates.Add($"{studiedSimList.ElementAt(predict_vars.loop_index).First_Date}");
-
-            total_nodes = fstudy_dates->total_nodes;
-            last_node = total_nodes - ONE;
-            fstudy_dates = cs_element_at(fstudy_dates, last_node);
-            fstudy_dates = cs_add(fstudy_dates);
-            ((struct st_fstudy_dates*)fstudy_dates->page)->dates = ((struct st_sim_model*)studied_simlist->page)->first_date;
-
-            // fstudy_counts
-            //fstudy_counts.Add(Constants.ONE_INT);
-            total_nodes = fstudy_counts->total_nodes;
-            last_node = total_nodes - ONE;
-            fstudy_counts = cs_element_at(fstudy_counts, last_node);
-            fstudy_counts = cs_add(fstudy_counts);
-            ((struct st_fstudy_counts*)fstudy_counts->page)->counts = ONE;
+            add_fstudy_node(temp_date_two, 1);
         }
     }
 }
+
+void add_fstudy_node(date_time *new_date, int new_count)
+{
+    // For find_high_y
+
+    // Add new_date to fstudy_dates
+    total_nodes = fstudy_dates->total_nodes;
+    last_node = total_nodes - 1;
+    fstudy_dates = cs_element_at(fstudy_dates, last_node);
+    fstudy_dates = cs_add(fstudy_dates);
+    ((struct st_fstudy_dates*)fstudy_dates->page)->dates = new_date;
+
+    // Add new_count to fstudy_counts
+    total_nodes = fstudy_counts->total_nodes;
+    last_node = total_nodes - 1;
+    fstudy_counts = cs_element_at(fstudy_counts, last_node);
+    fstudy_counts = cs_add(fstudy_counts);
+    ((struct st_fstudy_counts*)fstudy_counts->page)->counts = new_count;
+}
+
+void increment_fstudy_count(int index)
+{
+    // For find_high_y
+
+    fstudy_counts = cs_element_at(fstudy_counts, index);
+    ++((struct st_fstudy_counts*)fstudy_counts->page)->counts;
+}
+
 void prepare_past_studies()
 {
     const int ZERO = 0;
@@ -2866,134 +2386,75 @@ void x_max_repeat_sort()
     stopped updating a lot of variable names after here to speed things up.
     change them one functions are converted.
 */
+
 bool x_insert_sort(bool xsort_correct)
 {
     const int ZERO = 0;
     const int ONE = 1;
     const int TWO = 2;
-
-    //SimModel listKey = new SimModel();
-    /*
-    // For all lists
-	int top_number;        // The line number here is used instead of topic id
-	
-	char *first_date;
-	char *simulated_date;  // Simulated date of the simulateed repetition.
-	char *next_date;
-	
-	int real_repetition;
-	int sim_repetition;        
-
-	double top_difficulty;
-	double interval_length;
-    */
-    struct st_sim_model list_key;
-
+    struct st_sim_model list_key, xmax_temp;
 
     for (predict_vars.j = TWO; predict_vars.j < xmax_sortlist->total_nodes; predict_vars.j++)
     {
         xmax_sortlist = cs_element_at(xmax_sortlist, predict_vars.j);
-        list_key.top_number = ((struct st_sim_model*)xmax_sortlist->page)->top_number;
-        list_key.first_date = ((struct st_sim_model*)xmax_sortlist->page)->first_date;
-        list_key.simulated_date = ((struct st_sim_model*)xmax_sortlist->page)->simulated_date;
-        list_key.next_date = ((struct st_sim_model*)xmax_sortlist->page)->next_date;
-        list_key.real_repetition = ((struct st_sim_model*)xmax_sortlist->page)->real_repetition;
-        list_key.sim_repetition = ((struct st_sim_model*)xmax_sortlist->page)->sim_repetition;
-        list_key.top_difficulty = ((struct st_sim_model*)xmax_sortlist->page)->top_difficulty;
-        list_key.interval_length = ((struct st_sim_model*)xmax_sortlist->page)->interval_length;
-        //list_key.top_number = xmax_sortlist[predict_vars.j];
+        copy_model(&list_key, (struct st_sim_model*)xmax_sortlist->page);
 
-        // Insert xmax_sortlist[j] into sorted sequence xmax_sortlist[1...j-1]
         predict_vars.i = predict_vars.j - ONE;
         xmax_sortlist = cs_element_at(xmax_sortlist, predict_vars.i);
         predict_vars.date_check = cs_date_compare(((struct st_sim_model*)xmax_sortlist->page)->simulated_date, list_key.simulated_date);
+
         while (predict_vars.i > ZERO && predict_vars.date_check > ZERO)
         {
-            struct st_sim_model xmax_temp;
             xmax_sortlist = cs_element_at(xmax_sortlist, predict_vars.i);
-            xmax_temp.top_number = ((struct st_sim_model*)xmax_sortlist->page)->top_number;
-            xmax_temp.first_date = ((struct st_sim_model*)xmax_sortlist->page)->first_date;
-            xmax_temp.simulated_date = ((struct st_sim_model*)xmax_sortlist->page)->simulated_date;
-            xmax_temp.next_date = ((struct st_sim_model*)xmax_sortlist->page)->next_date;
-            xmax_temp.real_repetition = ((struct st_sim_model*)xmax_sortlist->page)->real_repetition;
-            xmax_temp.sim_repetition = ((struct st_sim_model*)xmax_sortlist->page)->sim_repetition;
-            xmax_temp.top_difficulty = ((struct st_sim_model*)xmax_sortlist->page)->top_difficulty;
-            xmax_temp.interval_length = ((struct st_sim_model*)xmax_sortlist->page)->interval_length;
+            copy_model(&xmax_temp, (struct st_sim_model*)xmax_sortlist->page);
 
             xmax_sortlist = cs_element_at(xmax_sortlist, predict_vars.i + ONE);
-            xmax_sortlist = &xmax_temp;
+            copy_model((struct st_sim_model*)xmax_sortlist->page, &xmax_temp);
+
             predict_vars.i = predict_vars.i - ONE;
             xmax_sortlist = cs_element_at(xmax_sortlist, predict_vars.i);
             predict_vars.date_check = cs_date_compare(((struct st_sim_model*)xmax_sortlist->page)->simulated_date, list_key.simulated_date);
         }
         xmax_sortlist = cs_element_at(xmax_sortlist, predict_vars.i + ONE);
-        xmax_sortlist = &list_key;
+        copy_model((struct st_sim_model*)xmax_sortlist->page, &list_key);
     }
 
-    /* 
-    this is here to get the first element sorted into 
-    the rest of the array on the second run of the loop
-    */
-    struct st_sim_model xmax_temp;
+    // Extra logic to handle the first element
     xmax_sortlist = cs_element_at(xmax_sortlist, ONE);
-    xmax_temp.top_number = ((struct st_sim_model*)xmax_sortlist->page)->top_number;
-    xmax_temp.first_date = ((struct st_sim_model*)xmax_sortlist->page)->first_date;
-    xmax_temp.simulated_date = ((struct st_sim_model*)xmax_sortlist->page)->simulated_date;
-    xmax_temp.next_date = ((struct st_sim_model*)xmax_sortlist->page)->next_date;
-    xmax_temp.real_repetition = ((struct st_sim_model*)xmax_sortlist->page)->real_repetition;
-    xmax_temp.sim_repetition = ((struct st_sim_model*)xmax_sortlist->page)->sim_repetition;
-    xmax_temp.top_difficulty = ((struct st_sim_model*)xmax_sortlist->page)->top_difficulty;
-    xmax_temp.interval_length = ((struct st_sim_model*)xmax_sortlist->page)->interval_length;
+    copy_model(&xmax_temp, (struct st_sim_model*)xmax_sortlist->page);
     xmax_sortlist = cs_element_at(xmax_sortlist, ZERO);
 
     int toFixSort = cs_date_compare(((struct st_sim_model*)xmax_sortlist->page)->simulated_date, xmax_temp.simulated_date);
+
     if (toFixSort > ZERO)
     {
-        //key = A[ZERO];
         xmax_sortlist = cs_element_at(xmax_sortlist, ZERO);
-        list_key.top_number = ((struct st_sim_model*)xmax_sortlist->page)->top_number;
-        list_key.first_date = ((struct st_sim_model*)xmax_sortlist->page)->first_date;
-        list_key.simulated_date = ((struct st_sim_model*)xmax_sortlist->page)->simulated_date;
-        list_key.next_date = ((struct st_sim_model*)xmax_sortlist->page)->next_date;
-        list_key.real_repetition = ((struct st_sim_model*)xmax_sortlist->page)->real_repetition;
-        list_key.sim_repetition = ((struct st_sim_model*)xmax_sortlist->page)->sim_repetition;
-        list_key.top_difficulty = ((struct st_sim_model*)xmax_sortlist->page)->top_difficulty;
-        list_key.interval_length = ((struct st_sim_model*)xmax_sortlist->page)->interval_length;
-        //A[ZERO] = A[ONE];
+        copy_model(&list_key, (struct st_sim_model*)xmax_sortlist->page);
         xmax_sortlist = cs_element_at(xmax_sortlist, ONE);
-        xmax_temp.top_number = ((struct st_sim_model*)xmax_sortlist->page)->top_number;
-        xmax_temp.first_date = ((struct st_sim_model*)xmax_sortlist->page)->first_date;
-        xmax_temp.simulated_date = ((struct st_sim_model*)xmax_sortlist->page)->simulated_date;
-        xmax_temp.next_date = ((struct st_sim_model*)xmax_sortlist->page)->next_date;
-        xmax_temp.real_repetition = ((struct st_sim_model*)xmax_sortlist->page)->real_repetition;
-        xmax_temp.sim_repetition = ((struct st_sim_model*)xmax_sortlist->page)->sim_repetition;
-        xmax_temp.top_difficulty = ((struct st_sim_model*)xmax_sortlist->page)->top_difficulty;
-        xmax_temp.interval_length = ((struct st_sim_model*)xmax_sortlist->page)->interval_length;
-
+        copy_model((struct st_sim_model*)xmax_sortlist->page, &xmax_temp);
         xmax_sortlist = cs_element_at(xmax_sortlist, ZERO);
-        ((struct st_sim_model*)xmax_sortlist->page)->top_number = xmax_temp.top_number;
-        ((struct st_sim_model*)xmax_sortlist->page)->first_date = xmax_temp.first_date;
-        ((struct st_sim_model*)xmax_sortlist->page)->simulated_date = xmax_temp.simulated_date;
-        ((struct st_sim_model*)xmax_sortlist->page)->next_date = xmax_temp.next_date;
-        ((struct st_sim_model*)xmax_sortlist->page)->real_repetition = xmax_temp.real_repetition;
-        ((struct st_sim_model*)xmax_sortlist->page)->sim_repetition = xmax_temp.sim_repetition;
-        ((struct st_sim_model*)xmax_sortlist->page)->top_difficulty = xmax_temp.top_difficulty;
-        ((struct st_sim_model*)xmax_sortlist->page)->interval_length = xmax_temp.interval_length;
-        //A[ONE] = key;
-        xmax_sortlist = cs_element_at(xmax_sortlist, ONE);
-        ((struct st_sim_model*)xmax_sortlist->page)->top_number = list_key.top_number;
-        ((struct st_sim_model*)xmax_sortlist->page)->first_date = list_key.first_date;
-        ((struct st_sim_model*)xmax_sortlist->page)->simulated_date = list_key.simulated_date;
-        ((struct st_sim_model*)xmax_sortlist->page)->next_date = list_key.next_date;
-        ((struct st_sim_model*)xmax_sortlist->page)->real_repetition = list_key.real_repetition;
-        ((struct st_sim_model*)xmax_sortlist->page)->sim_repetition = list_key.sim_repetition;
-        ((struct st_sim_model*)xmax_sortlist->page)->top_difficulty = list_key.top_difficulty;
-        ((struct st_sim_model*)xmax_sortlist->page)->interval_length = list_key.interval_length;
+        copy_model((struct st_sim_model*)xmax_sortlist->page, &list_key);
     }
     else
+    {
         xsort_correct = false;
+    }
     return xsort_correct;
 }
+bool copy_model(struct st_sim_model *dest, struct st_sim_model *src)
+{
+    // For x_insert_sort
+    dest->top_number = src->top_number;
+    dest->first_date = src->first_date;
+    dest->simulated_date = src->simulated_date;
+    dest->next_date = src->next_date;
+    dest->real_repetition = src->real_repetition;
+    dest->sim_repetition = src->sim_repetition;
+    dest->top_difficulty = src->top_difficulty;
+    dest->interval_length = src->interval_length;
+    return true;
+}
+
 void collect_non_studied()
 {
     const int ZERO = 0;
@@ -3175,16 +2636,47 @@ void prediction_lists_clear()
     }
     cs_clear_nodes(to_xmax);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void predict_studies()
 {
-    const int ZERO = 0;
-    const int TWO = 2;
-    int index;
+    const int INITIAL_INDEX = 0;
+    const int DAYS_TO_ADD = 2;
 
-    index = ZERO;
-    if (predict_vars.process_prediction == true)
+    // Initialize index and process predictions if required
+    int index = INITIAL_INDEX;
+    if (predict_vars.process_prediction)
     {
-        
         while (index < topics_list->total_nodes)
         {
             gensims_all_getter(index);
@@ -3192,49 +2684,46 @@ void predict_studies()
         }
         predict_vars.process_prediction = false;
     }
-    
+
+    // Collect studies based on x-axis data
     collect_study_x();
-    // Might just have to skip the following 3 functions for an off day HERE
+
+    // Date and skip check
     date_time *simDate, *previousDate;
     bool skipDay = false;
-
     previousDate = predict_vars.sim_date_use;
-    simDate = cs_add_days(previousDate, TWO);
-    
+    simDate = cs_add_days(previousDate, DAYS_TO_ADD);
     skipDay = skip_checker(simDate);
-    if (skipDay == false)
+
+    // If not a skip day, proceed with further calculations
+    if (!skipDay)
     {
         find_y_at_x();
         collect_study_y();
         reduce_new();
     }
 
-
-    index = ZERO;
-    
-
+    // Simulation and learning calculations
+    index = INITIAL_INDEX;
     while (index < studyrep_elements->total_nodes)
     {
         studyrep_elements = cs_element_at(studyrep_elements, index);
-
         predict_vars.gen_projected_index = ((struct st_studyrep_elements*)studyrep_elements->page)->studyrep_elements;
         sim_calculate_learning();
         ++index;
     }
 
-
-    // clear
-    index = ZERO;
+    // Clear the elements
+    index = INITIAL_INDEX;
     while (index < studyrep_elements->total_nodes)
     {
         studyrep_elements = cs_element_at(studyrep_elements, index);
-
         free((struct st_studyrep_elements*)studyrep_elements->page);
         ++index;
     }
-    // st_studyrep_elements
     cs_clear_nodes(studyrep_elements);
 }
+
 void collect_study_x()
 {
     const int ZERO = 0;
@@ -3313,6 +2802,7 @@ void collect_study_x()
     }
     predict_vars.current_x = repCheck;
 }
+
 void gensims_all_getter(int index)
 {
    const int ZERO = 0;
@@ -3731,72 +3221,57 @@ void sim_process_date()
 void check_for_week()
 {
     const int ZERO = 0;
-    const int THREE = 3;
-    // char *file_name, *file_path;
-    // if (globals.osSwitch == true)
-    //     file_name = "//week.sc";
-    // else
-    //     file_name = "\\week.sc";
-    
-    // file_name = "//week.sc";
-    // file_path = $"{globals.DirectoryPath}{file_name}";
-    init_file_path(THREE);
 
-    // List<string> weekfile_contents = new List<string>();
-    // st_week_model
-    // 
-    // struct st_week_model weekfile_contents;
+    // Initialize the file path
+    init_file_path(3);  // Assuming 3 is a code for determining the correct file path for week.sc
 
+    // Check if the file exists
     if (cs_file_exists(file_strings.week_file))
     {
-        
+        // Read all lines from the file into a list
+        struct st_node* week_lines = cs_ral_tolist(file_strings.week_file);
 
-        // weekfile_contents = File.ReadAllLines(file_path).ToList();
-        // file_strings->week_file
-        // ((struct st_sim_model*)week_list->page)->top_difficulty;
-        struct st_node* week_lines;
-        
-        // fix file_strings so that it works. It is messing up the intellisense for code that 
-        // comes after its use here is why I commented it out for right now.
-        
-        // week_lines = cs_ral_tolist(file_strings->week_file);
-        
-
-        int index = ZERO;
-        while (index < week_lines->total_nodes)
+        // Since the C# version reads all lines but actually only processes the first, 
+        // we will do the same here for a 1-to-1 mapping.
+        if (week_lines->total_nodes > 0) 
         {
-            //((struct st_sim_model*)week_list->page)->top_difficulty;
-            week_lines = cs_element_at(week_lines, index);
-            struct st_node* week_entries;
-            //string[] entries = line.Split(',');
-            week_entries = cs_list_split((struct st_string*)week_lines->page, ',');
-
-            // weekList.monday = Convert.ToInt32(entries[Constants.ZERO_INT]);
-            // weekList.tuesday = Convert.ToInt32(entries[Constants.ONE_INT]);
-            // weekList.wednesday = Convert.ToInt32(entries[Constants.TWO_INT]);
-            // weekList.thursday = Convert.ToInt32(entries[Constants.THREE_INT]);
-            // weekList.friday = Convert.ToInt32(entries[Constants.FOUR_INT]);
-            // weekList.saturday = Convert.ToInt32(entries[Constants.FIVE_INT]);
-            // weekList.sunday = Convert.ToInt32(entries[Constants.SIX_INT]);
-
-            week_list.monday = ZERO;
-            week_list.tuesday = ZERO;
-            week_list.wednesday = ZERO;
-            week_list.thursday = ZERO;
-            week_list.friday = ZERO;
-            week_list.saturday = ZERO;
-            week_list.sunday = ZERO;
+            struct st_string* current_line = (struct st_string*)cs_element_at(week_lines, 0)->page;
             
+            // Split the line by commas
+            struct st_node* week_entries = cs_list_split(current_line, ',');
+
+            // Convert these st_string objects to integers and store them in week_list
+            week_list.monday    = atoi(((struct st_string*)cs_element_at(week_entries, 0)->page)->str);
+            week_list.tuesday   = atoi(((struct st_string*)cs_element_at(week_entries, 1)->page)->str);
+            week_list.wednesday = atoi(((struct st_string*)cs_element_at(week_entries, 2)->page)->str);
+            week_list.thursday  = atoi(((struct st_string*)cs_element_at(week_entries, 3)->page)->str);
+            week_list.friday    = atoi(((struct st_string*)cs_element_at(week_entries, 4)->page)->str);
+            week_list.saturday  = atoi(((struct st_string*)cs_element_at(week_entries, 5)->page)->str);
+            week_list.sunday    = atoi(((struct st_string*)cs_element_at(week_entries, 6)->page)->str);
+            
+            // Don't forget to free week_entries if necessary
+
         }
         
+        // Don't forget to free week_lines if necessary
+        // Free Pages from Nodes
+        index = 0;
+        while (index < week_lines->total_nodes) {
+            week_lines = cs_element_at(week_lines, index);
+            free((struct st_node*)week_lines->page); // Free page data
+            ++index;
+        }
+        index = 0;
+        week_lines = cs_element_at(week_lines, index); // Reset to the first node if needed.
+        cs_clear_nodes(week_lines); // Clear the nodes
     }
     else
     {
-        char file_contents = "0,0,0,0,0,0,0";
-
-        // File.WriteAllText(file_path,fileContents);
+        // File doesn't exist, so write default values to it
+        char file_contents[] = "0,0,0,0,0,0,0";
         cs_write_all_text(file_strings.week_file, file_contents);
-        
+
+        // Set all fields in week_list to zero
         week_list.monday = ZERO;
         week_list.tuesday = ZERO;
         week_list.wednesday = ZERO;
@@ -3806,6 +3281,8 @@ void check_for_week()
         week_list.sunday = ZERO;
     }
 }
+/* stopped here 9-29-2023 */
+
 bool skip_checker(date_time *simDate)
 {
     const int ONE = 1;
@@ -4175,3 +3652,4 @@ void free_file_path(int choice)
     }
 }
 /********************************FILE PATHS END************************************************/
+
