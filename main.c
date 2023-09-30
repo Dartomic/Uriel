@@ -114,27 +114,6 @@ void init_file_path(int choice);
 void free_file_path(int choice);
 
 
-// NOTE: the make a checklist struct that is set to true once a linked list
-//       recieves its firts page for a node.
-//      
-//       it will be set to false upon clearing each element, except for the
-//       first node.
-//
-//      This will make it easy to ensure that there will not be too many nodes added.
-//      Once program parts converted, then go through the parts that have cs_add, and
-//      make it check before adding.
-//
-//      Then go through the parts where the lists are cleared, and set the corresponding
-//      element in the struct checklist to false, but make sure to leave at least one node.
-
-
-// NOTE 2: To make the logic of the program potentially a bit more difficult for a program to match
-//         this source code to the C# version I wrote, I could make the function calls recursive,
-//         instead of calling them one after the other exits. But if I do this, then do it after
-//         I have the program working with the current logical design.
-
-
-
 // Memory Leaks:
 // Once done converting, go through and collect the list of string pointers 
 // that I can to put into a global variable list, to decrease the number 
