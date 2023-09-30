@@ -25,12 +25,14 @@ int cs_file_exists(const char *filename)
 }
 struct st_node* cs_ral_tolist(const char* path)
 {
-    struct st_node* current = malloc(sizeof(struct st_node));
-    char *string = cs_read_all_text(path);
-    char *token = "\n";
-    current = cs_list_split(string, token);
+    char *string = cs_read_all_text(path); // Assume cs_read_all_text reads the entire file into a string
+    if (!string) {
+        return NULL; // Failed to read the file
+    }
+    struct st_node* head = cs_list_split(string, "\n");
+    free(string); // Free the string allocated by cs_read_all_text
     
-    return current;
+    return head;
 }
 char* cs_read_all_text(char* path) 
 {
@@ -217,48 +219,45 @@ char* cs_to_string(int value)
 }
 
 /* C Sharp inspired linked list tools  */
-struct st_node* cs_list_split(const char* string, const char* token_in)
+struct st_node* cs_list_split(const char* string, const char* delimiter)
 {
-    const int ZERO = 0;
-    const int ONE = 1;
-    struct st_node *current = malloc(sizeof(struct st_node));
-    char *initial_token = strtok(string, token_in);
-    char token[2];
-
-    strcpy(token, initial_token);
-    
-    // count the number of times a token occurs
-    int count = 0;
-    for (int index = 0; index < strlen(string); index++) 
-        if (string[index] == token) 
-            count++;
-
-    // Use the number counted to generate a linked list
-    count -= ONE; // Decremented by one because there is already one element in the linked list
-    while (count > ZERO)
-    {
-        current = cs_add(current);        
-        --count;
+    char *string_copy = strdup(string); // Create a mutable copy of the string
+    if (!string_copy) {
+        return NULL; // Memory allocation failed
     }
+    struct st_node *head = NULL, *current = NULL;
+    char *token = strtok(string_copy, delimiter);
 
-
-    // Fill the pages of the nodes of the linked list with the necessary values.
-    int index = ZERO;
-    while (initial_token != NULL) 
+    while (token != NULL)
     {
-        struct st_string* temp =  malloc(sizeof(struct st_string));
-
-        strcpy(temp, initial_token); // copy the token string into the part array
+        struct st_node* new_node = malloc(sizeof(struct st_node));
+        if (!new_node) {
+            // Handle memory allocation failure, free the already allocated nodes, and string_copy
+            return NULL;
+        }
         
-        // store the split string into the linked list
-        current = cs_element_at(current, index);
-        current->page = &temp;
-
-        // prepare the token for the next loop check
-        initial_token = strtok(NULL, initial_token);
+        new_node->page = strdup(token);
+        if (!new_node->page) {
+            // Handle memory allocation failure, free the already allocated nodes, and string_copy
+            return NULL;
+        }
+        
+        new_node->next = NULL;
+        
+        if (current == NULL) {
+            head = new_node;
+            current = head;
+        } else {
+            current->next = new_node;
+            current = new_node;
+        }
+        
+        token = strtok(NULL, delimiter);
     }
 
-    return current;
+    free(string_copy);
+    
+    return head;
 }
 void cs_console_clear()
 {
