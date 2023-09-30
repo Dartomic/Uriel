@@ -3220,10 +3220,15 @@ void sim_process_date()
 /*******************************WEEKLY SCHEDULE START******************************************/
 void check_for_week()
 {
-    const int ZERO = 0;
+    const int ONE = 1;
+    const int TWO = 2;
+    const int THREE = 3;
+    const int FOUR = 4;
+    const int FIVE = 5;
+    const int SIX = 6;
 
     // Initialize the file path
-    init_file_path(3);  // Assuming 3 is a code for determining the correct file path for week.sc
+    init_file_path(THREE);  // Assuming 3 is a code for determining the correct file path for week.sc
 
     // Check if the file exists
     if (cs_file_exists(file_strings.week_file))
@@ -3233,21 +3238,21 @@ void check_for_week()
 
         // Since the C# version reads all lines but actually only processes the first, 
         // we will do the same here for a 1-to-1 mapping.
-        if (week_lines->total_nodes > 0) 
+        if (week_lines->total_nodes > ZERO) 
         {
-            struct st_string* current_line = (struct st_string*)cs_element_at(week_lines, 0)->page;
+            struct st_string* current_line = (struct st_string*)cs_element_at(week_lines, ZERO)->page;
             
             // Split the line by commas
             struct st_node* week_entries = cs_list_split(current_line, ',');
 
             // Convert these st_string objects to integers and store them in week_list
-            week_list.monday    = atoi(((struct st_string*)cs_element_at(week_entries, 0)->page)->str);
-            week_list.tuesday   = atoi(((struct st_string*)cs_element_at(week_entries, 1)->page)->str);
-            week_list.wednesday = atoi(((struct st_string*)cs_element_at(week_entries, 2)->page)->str);
-            week_list.thursday  = atoi(((struct st_string*)cs_element_at(week_entries, 3)->page)->str);
-            week_list.friday    = atoi(((struct st_string*)cs_element_at(week_entries, 4)->page)->str);
-            week_list.saturday  = atoi(((struct st_string*)cs_element_at(week_entries, 5)->page)->str);
-            week_list.sunday    = atoi(((struct st_string*)cs_element_at(week_entries, 6)->page)->str);
+            week_list.monday    = atoi(((struct st_string*)cs_element_at(week_entries, ZERO)->page)->string);
+            week_list.tuesday   = atoi(((struct st_string*)cs_element_at(week_entries, ONE)->page)->string);
+            week_list.wednesday = atoi(((struct st_string*)cs_element_at(week_entries, TWO)->page)->string);
+            week_list.thursday  = atoi(((struct st_string*)cs_element_at(week_entries, THREE)->page)->string);
+            week_list.friday    = atoi(((struct st_string*)cs_element_at(week_entries, FOUR)->page)->string);
+            week_list.saturday  = atoi(((struct st_string*)cs_element_at(week_entries, FIVE)->page)->string);
+            week_list.sunday    = atoi(((struct st_string*)cs_element_at(week_entries, SIX)->page)->string);
             
             // Don't forget to free week_entries if necessary
 
@@ -3281,7 +3286,6 @@ void check_for_week()
         week_list.sunday = ZERO;
     }
 }
-/* stopped here 9-29-2023 */
 
 bool skip_checker(date_time *simDate)
 {
@@ -3289,26 +3293,25 @@ bool skip_checker(date_time *simDate)
     bool skip = false;
     
     if (weekList.monday == ONE)
-    simDate
-        if (simDate.DayOfWeek == DayOfWeek.Monday)
+        if (simDate->DayOfWeek == DayOfWeek.Monday)
             skip = true;
-    if (weekList.Tuesday == Constants.ONE_INT)
-        if (simDate.DayOfWeek == DayOfWeek.Tuesday)
+    if (weekList->Tuesday == ONE)
+        if (simDate->DayOfWeek == DayOfWeek.Tuesday)
             skip = true;
-    if (weekList.Wednesday == Constants.ONE_INT)
-        if (simDate.DayOfWeek == DayOfWeek.Wednesday)
+    if (weekList->Wednesday ==  ONE)
+        if (simDate->DayOfWeek == DayOfWeek.Wednesday)
             skip = true;
-    if (weekList.Thursday == Constants.ONE_INT)
-        if (simDate.DayOfWeek == DayOfWeek.Thursday)
+    if (weekList->Thursday ==  ONE)
+        if (simDate->DayOfWeek == DayOfWeek.Thursday)
             skip = true;
-    if (weekList.Friday == Constants.ONE_INT)
-        if (simDate.DayOfWeek == DayOfWeek.Friday)
+    if (weekList->Friday ==  ONE)
+        if (simDate->DayOfWeek == DayOfWeek.Friday)
             skip = true;
-    if (weekList.Saturday == Constants.ONE_INT)
-        if (simDate.DayOfWeek == DayOfWeek.Saturday)
+    if (weekList->Saturday ==  ONE)
+        if (simDate->DayOfWeek == DayOfWeek.Saturday)
             skip = true;
-    if (weekList.Sunday == Constants.ONE_INT)
-        if (simDate.DayOfWeek == DayOfWeek.Sunday)
+    if (weekList.Sunday ==  ONE)
+        if (simDate->DayOfWeek == DayOfWeek.Sunday)
             skip = true;
     
     return skip;
@@ -3318,37 +3321,29 @@ void weekly_schedule()
     const int ZERO = 0;
     const int SIX = 6;
     const int THIRTEEN = 13;
-    const char MENU = 'm';
     bool menuBool = false;
-    char *userInput;
+    char *userInput = NULL;
     int dayOption = ZERO;
     char *endptr;
-    int dayOption;
     long int converted;
-    
+
     while (menuBool == false)
     {
         selection_dialogs(THIRTEEN);
-        userInput = cs_read_line();
-        if (userInput != MENU)
+        userInput = cs_read_line(); // Assuming cs_read_line allocates memory for userInput
+        if (strcmp(userInput, "m") != 0)
         {
             converted = strtol(userInput, &endptr, 10);
-            if (*endptr == '\0' && ((int)converted <= SIX || (int)converted >= ZERO))
+            if (*endptr == '\0' && converted <= SIX && converted >= ZERO)
             {
                 dayOption = (int)converted;
-                // Conversion to int was successful
-                // You can proceed with the logic involving dayOption here
-                
                 cs_console_clear();
                 toggle_day_function(dayOption);
             }
             else
             {
-                // Conversion to int failed
-                // Handle the case where userInput is not a valid integer
-
                 cs_console_clear();
-                // Console.WriteLine("Invalid input.\nPress Enter to try again.");
+                // Show "Invalid input" message and wait for Enter
                 cs_read_line();
                 cs_console_clear();
             }
@@ -3357,6 +3352,10 @@ void weekly_schedule()
         {
             menuBool = true;
         }
+
+        // Free the allocated memory for userInput
+        free(userInput);
+        userInput = NULL;
     }
 }
 void weekly_dialog()
@@ -3368,11 +3367,13 @@ void weekly_dialog()
     const int FOUR = 4;
     const int FIVE = 5;
     const int SIX = 6;
-    const int SEVEN = 7;
+    const int SEVEN = 7; // Or use (SIX + 1)
     const int STUDY_DAY = 0;
     const int OFF_DAY = 1;
+    
     char* days[] = {"0) Monday", "1) Tuesday", "2) Wednesday", "3) Thursday", "4) Friday", "5) Saturday", "6) Sunday"};
     char* state[] = {"Study Day", "Off Day"};
+    
     int dayState[SEVEN];
 
     dayState[ZERO] = weekList.Monday;
@@ -3387,12 +3388,12 @@ void weekly_dialog()
     while (index <= SIX)
     {
         if (dayState[index] == ZERO)
-            printf("\n%d    ---   %s\n", days[index], state[STUDY_DAY]);
+            printf("%s    ---   %s\n", days[index], state[STUDY_DAY]);
         else
-            printf("\n%d    ---   %s\n", days[index], state[OFF_DAY]);
+            printf("%s    ---   %s\n", days[index], state[OFF_DAY]);
         ++index;
     }
-    printf("\n\n\n\n\nOPTIONS:\nEnter a number from 1 to 7 to alter the schedule.\n\nOr enter m to go back to the main menu:\n");
+    printf("\n\n\nOPTIONS:\nEnter a number from 1 to 7 to alter the schedule.\n\nOr enter m to go back to the main menu: ");
 }
 void toggle_day_function(int dayOption)
 {
@@ -3459,51 +3460,38 @@ void toggle_day_function(int dayOption)
     week_list.sunday = atoi(((struct st_string*)week_entries->page)->string);
     //}
 
-    
+    week_list.monday = atoi(((struct st_string*)cs_element_at(week_entries, ZERO)->page)->string);
+    week_list.tuesday = atoi(((struct st_string*)cs_element_at(week_entries, ONE)->page)->string);
+    week_list.wednesday = atoi(((struct st_string*)cs_element_at(week_entries, ONE)->page)->string);
+    week_list.thursday = atoi(((struct st_string*)cs_element_at(week_entries, ONE)->page)->string);
+    week_list.friday = atoi(((struct st_string*)cs_element_at(week_entries, ONE)->page)->string);
+    week_list.saturday = atoi(((struct st_string*)cs_element_at(week_entries, ONE)->page)->string);
+    week_list.sunday = atoi(((struct st_string*)cs_element_at(week_entries, ONE)->page)->string);
 
+
+    // Toggle the day based on the option
     switch (dayOption)
     {
         case 0:
-            if (week_list.monday == ZERO)
-                week_list.monday = ONE;
-            else
-                week_list.monday = ZERO;
+            week_list.monday = (week_list.monday == ZERO) ? ONE : ZERO;
             break;
         case 1:
-            if (week_list.tuesday == ZERO)
-                week_list.tuesday = ONE;
-            else
-                week_list.tuesday = ZERO;
+            week_list.monday = (week_list.tuesday == ZERO) ? ONE : ZERO;
             break;
         case 2:
-            if (week_list.wednesday == ZERO)
-                week_list.wednesday = ONE;
-            else
-                week_list.wednesday = ZERO;
+            week_list.monday = (week_list.wednesday == ZERO) ? ONE : ZERO;
             break;
         case 3:
-            if (week_list.thursday == ZERO)
-                week_list.thursday = ONE;
-            else
-                week_list.thursday = ZERO;
+            week_list.monday = (week_list.thursday == ZERO) ? ONE : ZERO;
             break;
         case 4:
-            if (week_list.friday == ZERO)
-                week_list.friday = ONE;
-            else
-                week_list.friday = ZERO;
+            week_list.monday = (week_list.friday == ZERO) ? ONE : ZERO;
             break;
         case 5:
-            if (week_list.saturday == ZERO)
-                week_list.saturday = ONE;
-            else
-                week_list.saturday = ZERO;
+            week_list.monday = (week_list.saturday == ZERO) ? ONE : ZERO;
             break;
         case 6:
-            if (week_list.sunday == ZERO)
-                week_list.sunday = ONE;
-            else
-                week_list.sunday = ZERO;
+            week_list.monday = (week_list.sunday == ZERO) ? ONE : ZERO;
             break;
     }
 
@@ -3562,6 +3550,172 @@ void toggle_day_function(int dayOption)
     free(temp);
     cs_clear_nodes(output);
 }
+void toggle_day_function(int dayOption)
+{
+    const int ZERO = 0;
+    const int ONE = 1;
+    const int TWO = 2;
+    const int THREE = 3;
+    const int FOUR = 4;
+    const int FIVE = 5;
+    const int SIX = 6;
+    
+    // Initialize file path
+    init_file_path(THREE);
+    char *file_content = cs_read_all_text(file_strings.week_file);
+    if (file_content == NULL) 
+    {
+        // Handle error, e.g., file not found or read failure
+        fprintf(stderr, "Error: Unable to read from file %s.\n", file_strings.week_file);
+        return;
+    }
+
+
+struct st_node *week_entries = cs_list_split(file_content, "\n");
+if (week_entries == NULL)
+{
+    // Handle error, e.g., memory allocation failure
+    fprintf(stderr, "Error: Failed to create linked list from file content.\n");
+    // Optionally, clean up any previously allocated resources, if necessary
+    if (file_content != NULL) {
+        free(file_content);
+    }
+    return;
+}
+
+
+    // Update week_list from the file
+    week_list.monday = atoi(((struct st_string*)cs_element_at(week_entries, ZERO)->page)->string);
+    week_list.tuesday = atoi(((struct st_string*)cs_element_at(week_entries, ONE)->page)->string);
+    week_list.wednesday = atoi(((struct st_string*)cs_element_at(week_entries, ONE)->page)->string);
+    week_list.thursday = atoi(((struct st_string*)cs_element_at(week_entries, ONE)->page)->string);
+    week_list.friday = atoi(((struct st_string*)cs_element_at(week_entries, ONE)->page)->string);
+    week_list.saturday = atoi(((struct st_string*)cs_element_at(week_entries, ONE)->page)->string);
+    week_list.sunday = atoi(((struct st_string*)cs_element_at(week_entries, ONE)->page)->string);
+
+
+    // Toggle the day based on the option
+    switch (dayOption)
+    {
+        case 0:
+            week_list.monday = (week_list.monday == ZERO) ? ONE : ZERO;
+            break;
+        case 1:
+            week_list.tuesday = (week_list.tuesday == ZERO) ? ONE : ZERO;
+            break;
+        case 2:
+            week_list.wednesday = (week_list.wednesday == ZERO) ? ONE : ZERO;
+            break;
+        case 3:
+            week_list.thursday = (week_list.thursday == ZERO) ? ONE : ZERO;
+            break;
+        case 4:
+            week_list.friday = (week_list.friday == ZERO) ? ONE : ZERO;
+            break;
+        case 5:
+            week_list.saturday = (week_list.saturday == ZERO) ? ONE : ZERO;
+            break;
+        case 6:
+            week_list.sunday = (week_list.sunday == ZERO) ? ONE : ZERO;
+            break;
+    }
+
+    
+    // Prepare to write the output
+    char *output_str = NULL;
+    size_t total_size = 0;
+    total_size += snprintf(NULL, 0, "%d,", week_list.monday);
+    total_size += snprintf(NULL, 0, "%d,", week_list.tuesday);
+    total_size += snprintf(NULL, 0, "%d,", week_list.wednesday);
+    total_size += snprintf(NULL, 0, "%d,", week_list.thursday);
+    total_size += snprintf(NULL, 0, "%d,", week_list.friday);
+    total_size += snprintf(NULL, 0, "%d,", week_list.saturday);
+    total_size += snprintf(NULL, 0, "%d,", week_list.sunday);
+    
+    output_str = malloc(total_size + 1);
+    snprintf(output_str, total_size + 1, "%d,%d,%d,%d,%d,%d,%d", 
+                week_list.monday, week_list.tuesday, week_list.wednesday,
+                week_list.thursday, week_list.friday, week_list.saturday,
+                week_list.sunday);
+
+    // struct st_node *output = malloc(sizeof(struct st_node));
+    //... Initialize the output node properly
+    cs_write_all_lines(file_strings.week_file, output_str);
+
+    // Clean up
+    free(output_str);
+    free(output);
+    //... any other cleanup you may need
+}
+void toggle_day_function(int dayOption)
+{
+    // Initialize file path
+    init_file_path(THREE);
+    char *file_content = cs_read_all_text(file_strings.week_file);
+    if (file_content == NULL) 
+    {
+        fprintf(stderr, "Error: Unable to read from file %s.\n", file_strings.week_file);
+        return;
+    }
+
+    struct st_node *week_entries = cs_list_split(file_content, "\n");
+    if (week_entries == NULL)
+    {
+        fprintf(stderr, "Error: Failed to create linked list from file content.\n");
+        free(file_content);
+        return;
+    }
+
+    int days[] = {
+        atoi(((struct st_string*)cs_element_at(week_entries, ZERO)->page)->string),
+        atoi(((struct st_string*)cs_element_at(week_entries, ONE)->page)->string),
+        atoi(((struct st_string*)cs_element_at(week_entries, TWO)->page)->string),
+        atoi(((struct st_string*)cs_element_at(week_entries, THREE)->page)->string),
+        atoi(((struct st_string*)cs_element_at(week_entries, FOUR)->page)->string),
+        atoi(((struct st_string*)cs_element_at(week_entries, FIVE)->page)->string),
+        atoi(((struct st_string*)cs_element_at(week_entries, SIX)->page)->string)
+    };
+
+    // Toggle the day based on the option
+    days[dayOption] = (days[dayOption] == ZERO) ? ONE : ZERO
+
+    // Prepare to write the output
+    char *output = NULL;
+    size_t total_size = 0;
+    total_size += snprintf(NULL, 0, "%d,", days[ZERO]);
+    total_size += snprintf(NULL, 0, "%d,", days[ONE]);
+    total_size += snprintf(NULL, 0, "%d,", days[TWO]);
+    total_size += snprintf(NULL, 0, "%d,", days[THREE]);
+    total_size += snprintf(NULL, 0, "%d,", days[FOUR]);
+    total_size += snprintf(NULL, 0, "%d,", days[FIVE]);
+    total_size += snprintf(NULL, 0, "%d,", days[SIX]);
+
+    // Prepare to write the output
+    output = malloc(total_size + 1); // Adjust the size as necessary
+    snprintf(output, sizeof(total_size + 1), "%d,%d,%d,%d,%d,%d,%d", 
+            days[ZERO], days[ONE], days[TWO], days[THREE], days[FOUR], days[FIVE], days[SIX]);
+
+    cs_write_all_lines(file_strings.week_file, output);
+
+    // Clean up
+    free(file_content);
+    free(output);
+    // Free any other allocated resources
+
+    // Free Pages from Nodes
+    int index = ZERO;
+    while (index < week_entries->total_nodes) 
+    {
+        week_entries = cs_element_at(week_entries, index);
+        free((struct st_number*)week_entries->page); // Free page data
+        ++index;
+    }
+    index = ZERO;
+    week_entries = cs_element_at(week_entries, index); // Reset to the first node if needed.
+
+    cs_clear_nodes(week_entries); // Clear the nodes
+    free(week_entries); // Optionally free the main list structure
+}
 /********************************WEEKLY SCHEDULE END*******************************************/
 
 // COMPILE A COPY IN VM, not out of VM!!!!!!!!!!!!
@@ -3569,85 +3723,70 @@ void toggle_day_function(int dayOption)
 /********************************FILE PATHS START**********************************************/
 void init_file_path(int choice)
 {
-    const int ZERO = 0;
-    int len = ZERO;
-    int len_one = ZERO;
-    int len_two = ZERO;
-    int len_three = ZERO;
-    switch (choice) 
+    switch (choice)
     {
         case 1:
-            // file_strings->txt_course_listfile;
-            // file_strings->bak_course_listfile
-            file_constants.course_file;
-            // FILE: CourseList
-            
-            len_one = strlen(globals.directory_path) + strlen(file_constants.slash) + strlen(file_constants.course_file) + strlen(file_constants.txt_format) + 1;
-            len_two = strlen(globals.directory_path) + strlen(file_constants.slash) + strlen(file_constants.course_file) + strlen(file_constants.bak_format) + 1;
-            file_strings->txt_course_listfile = malloc(len_one);
-            file_strings->bak_course_listfile = malloc(len_two);
-            sprintf(file_strings->txt_course_listfile, "%s%s%s%s", globals.directory_path, file_constants.slash, file_constants.course_file, file_constants.txt_format);     
-            sprintf(file_strings->bak_course_listfile, "%s%s%s%s", globals.directory_path, file_constants.slash, file_constants.course_file, file_constants.bak_format);
+            file_strings->txt_course_listfile = concat_filepath(globals.directory_path, file_constants.slash, file_constants.course_file, file_constants.txt_format);
+            file_strings->bak_course_listfile = concat_filepath(globals.directory_path, file_constants.slash, file_constants.course_file, file_constants.bak_format);
             break;
         case 2:
-            // file_strings->course_countfile
-            // file_constants.course_count
-            // FILE: CourseCount
-            len = strlen(globals.directory_path) + strlen(file_constants.slash) + strlen(file_constants.course_count) + strlen(file_constants.txt_format) + 1;
-            file_strings->course_countfile = malloc(len);
-            sprintf(file_strings->course_countfile, "%s%s%s%s", globals.directory_path, file_constants.slash, file_constants.course_count, file_constants.txt_format);     
+            file_strings->course_countfile = concat_filepath(globals.directory_path, file_constants.slash, file_constants.course_count, file_constants.txt_format);
             break;
         case 3:
-            // file_strings->week_file
-            // file_constants.week_sc
-            // FILE: week.sc
-            len = strlen(globals.directory_path) + strlen(file_constants.slash) + strlen(file_constants.week_sc) + 1;
-            file_strings->week_file = malloc(len);
-            sprintf(file_strings->week_file, "%s%s%s", globals.directory_path, file_constants.slash, file_constants.week_sc);     
+            file_strings->week_file = concat_filepath(globals.directory_path, file_constants.slash, file_constants.week_sc, "");
             break;
         case 4:
-            // file_strings->txt_course_namefile
-            // globals.course_name
-            // FILE: CourseName
-            len_one = strlen(globals.directory_path) + strlen(file_constants.slash) + strlen(globals.course_name) + strlen(file_constants.txt_format) + 1;
-            len_two = strlen(globals.directory_path) + strlen(file_constants.slash) + strlen(globals.course_name) + strlen(file_constants.bak_format) + 1;
-            file_strings->txt_course_namefile = malloc(len);
-            file_strings->bak_course_namefile = malloc(len);
-            sprintf(file_strings->txt_course_namefile, "%s%s%s%s", globals.directory_path, file_constants.slash, globals.course_name, file_constants.txt_format);     
-            sprintf(file_strings->bak_course_namefile, "%s%s%s%s", globals.directory_path, file_constants.slash, globals.course_name, file_constants.txt_format);     
+            file_strings->txt_course_namefile = concat_filepath(globals.directory_path, file_constants.slash, globals.course_name, file_constants.txt_format);
+            file_strings->bak_course_namefile = concat_filepath(globals.directory_path, file_constants.slash, globals.course_name, file_constants.bak_format);
             break;
         default:
-            printf("The number is not 1, 2, or 3\n");
+            printf("The number is not 1, 2, 3, or 4\n");
             break;
     }
 }
-
-
+char* concat_filepath(const char* directory, const char* slash, const char* filename, const char* ext)
+{
+    int len = strlen(directory) + strlen(slash) + strlen(filename) + strlen(ext) + 1;
+    char *result = malloc(len);
+    if (result != NULL) {
+        snprintf(result, len, "%s%s%s%s", directory, slash, filename, ext);
+    }
+    return result;
+}
 void free_file_path(int choice)
 {
     switch (choice) 
     {
         case 1:
-            // file_strings->txt_course_listfile
-            // file_strings->bak_course_listfile
-            free(file_strings->txt_course_listfile);
-            free(file_strings->bak_course_listfile);
+            if (file_strings->txt_course_listfile) {
+                free(file_strings->txt_course_listfile);
+                file_strings->txt_course_listfile = NULL;
+            }
+            if (file_strings->bak_course_listfile) {
+                free(file_strings->bak_course_listfile);
+                file_strings->bak_course_listfile = NULL;
+            }
             break;
         case 2:
-            // file_strings->course_countfile
-            free(file_strings->course_countfile);
+            if (file_strings->course_countfile) {
+                free(file_strings->course_countfile);
+                file_strings->course_countfile = NULL;
+            }
             break;
         case 3:
-            // file_strings->week_file
-            free(file_strings->week_file);
+            if (file_strings->week_file) {
+                free(file_strings->week_file);
+                file_strings->week_file = NULL;
+            }
             break;
         case 4:
-            // Free this one right before initializing it, and at program exit with the others.
-            // file_strings->txt_course_namefile
-            free(file_strings->txt_course_namefile);
+            if (file_strings->txt_course_namefile) {
+                free(file_strings->txt_course_namefile);
+                file_strings->txt_course_namefile = NULL;
+            }
             break;
         default:
-            printf("The number is not 1, 2, or 3\n");
+            printf("Invalid choice. The number must be 1, 2, 3, or 4.\n");
             break;
     }
 }
