@@ -208,7 +208,7 @@ void get_date()
 /*
 Remember to free(globals.the_date); when you're done using it to prevent memory leaks.
 */
-
+    
     time_t now = time(NULL);
     struct tm *local_time = localtime(&now);
     globals.the_date = malloc(11 * sizeof(char));  // Allocate memory
@@ -1123,13 +1123,12 @@ void process_date()
     double interval_length = ((struct st_topic_model*)topics_list->page)->interval_length;
     double days = (interval_length / SINGLE_DAY); // The truncation is fine, because anything less than a day, which is after the decimal, is still part of the day that is calculated for the day to study the information.
     
-    /* REPLACE WHEN IM READY START */
-    printf("\n\nReplace the DateTime code when finished converting the rest of the program\n\n");
-    getchar();
-    DateTime today = DateTime.Parse(globals.TheDate);
-    DateTime next_date = today.AddDays(days);
-    TopicsList.ElementAt(globals.TopicID).Next_Date = nextDate.ToString("d");
-    /* REPLACE WHEN IM READY START */
+    // date format is mm/dd/yyyy
+    char *today = globals.the_date;
+    char *next_date = cs_add_days(today, days);
+    
+    topics_list = element_at(topics_list, globals.topic_id);
+    ((struct st_topic_model*)topics_list->page)->next_date = next_date;
 
     if (((struct st_topic_model*)topics_list->page)->top_studied = false)
         ((struct st_topic_model*)topics_list->page)->top_studied = true;
@@ -3144,78 +3143,61 @@ void sim_add_repetition()
 }
 void sim_process_date()
 {
-    const int ZERO = 0;
     const int ONE = 1;
-    const double SINGLE_DAY = 1440;
+    const double SINGLE_DAY = 1440.0;
     double interval_length;
     double days_double;
-    int days_int = ZERO;
-    date_time *fake_today;
-    date_time *next_date;
+    int days_int = 0;
+    char *fake_today;
     char *next_date_string;
+    int index_future = 0;
+    int topic_future = 0;
 
-    if (predict_vars.process_gen_sims_studied == true)
+    // Choose the data source based on the condition
+    struct st_sim_model *current_studied;
+    if (predict_vars.process_gen_sims_studied)
     {
-        gensims_studied = cs_element_at(gensims_studied, predict_vars.gen_studied_index);
-
-        // interval_length = gensims_studied.ElementAt(predict_vars.Gen_Studied_Index).Interval_Length;
-        // days_double = interval_length / SINGLE_DAY; 
-        // days_int = (int)days_double; //Necessary to cut off fractional portion without rounding, so cant convert to Int32 yet.
-        // fake_today = DateTime.Parse(gensims_studied[predict_vars.Gen_Studied_Index].Simulated_Date);
-        interval_length = ((struct st_sim_model*)gensims_studied->page)->interval_length = interval_length;
-        days_double = interval_length / SINGLE_DAY;
-        days_int = (int)days_double; // Necessary to cut off fractional portion without rounding, so cant convert to Int32 yet.
-        fake_today = ((struct st_sim_model*)gensims_studied->page)->simulated_date;
+        current_studied = (struct st_sim_model*)cs_element_at(gensims_studied, predict_vars.gen_studied_index)->page;
+        fake_today = current_studied->simulated_date;
     }
     else
     {
-        // Continue here
-        // interval_length = gensims_all[predict_vars.Gen_Projected_Index].Interval_Length;
-        // days_double = interval_length / SINGLE_DAY;  
-        // days_int = (int)days_double; //Necessary to cut off fractional portion without rounding, so cant convert to Int32 yet.
-        // fake_today = DateTime.Parse(predict_vars.Sim_Date_Use);
-
-        gensims_studied = cs_element_at(gensims_studied, predict_vars.gen_projected_index);
-        interval_length = ((struct st_sim_model*)gensims_studied->page)->interval_length;
-        days_double = interval_length / SINGLE_DAY;  
-        days_int = (int)days_double; //Necessary to cut off fractional portion without rounding, so cant convert to Int32 yet.
+        current_studied = (struct st_sim_model*)cs_element_at(gensims_studied, predict_vars.gen_projected_index)->page;
         fake_today = predict_vars.sim_date_use;
     }
-    //next_date = fake_today.AddDays(days_double);
-    
-    // next_date = fake_today.AddDays(days_int);
-    // next_date_string = next_date.ToString("d");
+
+    // Extract common calculations
+    interval_length = current_studied->interval_length;
+    days_double = interval_length / SINGLE_DAY;
+    days_int = (int)days_double;
+
+    // Calculate the next date
     next_date_string = cs_add_days(fake_today, days_int);
 
-
-    int index_future = ZERO;
-    int topic_future = ZERO;
-    if (predict_vars.process_gen_sims_studied == true)
+    // Logic for processing 'genSimsStudied' or 'genSimsAll'
+    if (predict_vars.process_gen_sims_studied)
     {
         index_future = predict_vars.gen_studied_index + ONE;
+        struct st_sim_model *next_studied = (struct st_sim_model*)cs_element_at(gensims_studied, index_future)->page;
+        topic_future = next_studied->top_number;
 
-        gensims_studied = cs_element_at(gensims_studied, index_future);
-        topic_future = ((struct st_sim_model*)gensims_studied->page)->top_number;
-        gensims_studied = cs_element_at(gensims_studied, predict_vars.gen_studied_index);
-        ((struct st_sim_model*)gensims_studied->page)->next_date = next_date_string;
-        
-        if (index_future < gensims_studied->total_nodes)
-            if (((struct st_sim_model*)gensims_studied->page)->top_number == topic_future)
-            {
-                // gensims_studied[index_future].Simulated_Date = next_date_string;
-                gensims_studied = cs_element_at(gensims_studied, index_future);
-                ((struct st_sim_model*)gensims_studied->page)->simulated_date = next_date_string;
-            }
+        current_studied->next_date = next_date_string;
+
+        if (index_future < gensims_studied->total_nodes && current_studied->top_number == topic_future)
+        {
+            next_studied->simulated_date = next_date_string;
+        }
     }
     else
     {
-        // gensims_all[predict_vars.Gen_Projected_Index].Simulated_Date = predict_vars.Sim_Date_Use;
-        // gensims_all[predict_vars.Gen_Projected_Index].Next_Date = next_date_string;
-        gensims_studied = cs_element_at(gensims_studied, predict_vars.gen_projected_index);
-        ((struct st_sim_model*)gensims_studied->page)->simulated_date = predict_vars.sim_date_use;
-        ((struct st_sim_model*)gensims_studied->page)->next_date = next_date_string;
+        current_studied->simulated_date = predict_vars.sim_date_use;
+        current_studied->next_date = next_date_string;
     }
+
+    // Remember to free next_date_string when done, to prevent memory leak.
+    free(next_date_string);
 }
+
 /***********************************PREDICTION END*********************************************/
 /*******************************WEEKLY SCHEDULE START******************************************/
 void check_for_week()
