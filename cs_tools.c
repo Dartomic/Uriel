@@ -225,25 +225,27 @@ struct st_node* cs_list_split(const char* string, const char* delimiter)
     if (!string_copy) {
         return NULL; // Memory allocation failed
     }
-    struct st_node *head = NULL, *current = NULL;
+
+    struct st_node *head = NULL, *current = NULL, *new_node = NULL;
     char *token = strtok(string_copy, delimiter);
 
     while (token != NULL)
     {
-        struct st_node* new_node = malloc(sizeof(struct st_node));
+        new_node = malloc(sizeof(struct st_node));
         if (!new_node) {
-            // Handle memory allocation failure, free the already allocated nodes, and string_copy
-            return NULL;
+            // Handle memory allocation failure
+            goto cleanup;
         }
-        
+
         new_node->page = strdup(token);
         if (!new_node->page) {
-            // Handle memory allocation failure, free the already allocated nodes, and string_copy
-            return NULL;
+            // Handle memory allocation failure
+            free(new_node);
+            goto cleanup;
         }
-        
+
         new_node->next = NULL;
-        
+
         if (current == NULL) {
             head = new_node;
             current = head;
@@ -251,13 +253,26 @@ struct st_node* cs_list_split(const char* string, const char* delimiter)
             current->next = new_node;
             current = new_node;
         }
-        
+
         token = strtok(NULL, delimiter);
     }
 
     free(string_copy);
-    
     return head;
+
+cleanup:
+    free(string_copy);
+
+    // Free the already allocated nodes
+    while (head != NULL)
+    {
+        struct st_node *temp = head;
+        head = head->next;
+        free(temp->page);
+        free(temp);
+    }
+
+    return NULL;
 }
 void cs_console_clear()
 {
