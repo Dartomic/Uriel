@@ -26,9 +26,9 @@ int cs_file_exists(const char *filename)
 struct st_node* cs_ral_tolist(const char* path)
 {
     char *string = cs_read_all_text(path); // Assume cs_read_all_text reads the entire file into a string
-    if (!string) {
+    if (!string)
         return NULL; // Failed to read the file
-    }
+
     struct st_node* head = cs_list_split(string, "\n");
     free(string); // Free the string allocated by cs_read_all_text
     
@@ -72,52 +72,55 @@ char* cs_read_line()
     size_t bufferSize = 0;
     ssize_t lineSize = getline(&line, &bufferSize, stdin);
 
-    if (lineSize == -1) {
+    if (lineSize == -1)
+    {
         printf("Failed to read input\n");
         return NULL;
     }
 
     // remove newline character from end of input
-    if (line[lineSize - 1] == '\n') {
+    if (line[lineSize - 1] == '\n')
         line[lineSize - 1] = '\0';
-    }
 
     return line;
 }
 int cs_write_all_lines(char* path, struct st_node *output, int total_nodes) 
 {
-    const int ZERO = 0;
-    const int ONE = 1;
+    if (total_nodes <= 0 || output == NULL)
+        return -1;  // Invalid input
 
     FILE* file = fopen(path, "w");
 
-    printf("\nBuild the file if it does not exist\n");
-    getchar();
     if (file == NULL) 
     {
-        // Don't leave any of this code once I change the inside of this function.
-        printf("TODO: Change this to build the file if it does not exist.");
-        getchar(); 
-
-        return -1;  // TODO: Change this to build the file if it does not exist.
+        file = fopen(path, "w+");
+        if (file == NULL)
+        {
+            perror("Could not create file");
+            return -1;
+        }
     }
 
-    for (int index = ZERO; index < (total_nodes - ONE); index++) 
+    struct st_node *first_element = output;
+
+    for (int index = 0; index < total_nodes; ++index) 
     {
-        output = cs_element_at(output, index);
+        output = cs_element_at(first_element, index);
+        if (output->page == NULL)
+            continue;  // Skip writing if the page is NULL
+
         fprintf(file, "%s\n", ((struct st_string*)output->page)->string);
     }
 
-    fclose(file);    
+    fclose(file);
     return 0;
 }
 int cs_write_all_text(const char *filename, const char *text)
 {
     FILE *fp = fopen(filename, "w");
     if (fp == NULL) 
-    {
         return -1;
-    }
+
     fputs(text, fp);
     fclose(fp);
     return 0;
@@ -144,18 +147,19 @@ int cs_to_int(const char *str)
 }
 int cs_check_int(const char *str) // This is just to check that the cs_to_int function recieves valid input
 {
-    if (str == NULL || *str == '\0') {
+    if (str == NULL || *str == '\0')
         return 0;
-    }
 
-    if (*str == '-' || *str == '+') {
+
+    if (*str == '-' || *str == '+')
         str++;
-    }
 
-    while (*str != '\0') {
-        if (!isdigit(*str)) {
+
+    while (*str != '\0')
+    {
+        if (!isdigit(*str))
             return 0;
-        }
+
         str++;
     }
 
@@ -167,53 +171,52 @@ int cs_check_int(const char *str) // This is just to check that the cs_to_int fu
 // }
 int cs_check_double(const char *char_var)
 {
+    const int MAX_DIGITS = 20;
     const int ZERO = 0;
     const int ONE = 1;
-    const int TWENTY = 20; // 20 is small enough that it doesn't matter that it would be too high of a number of digits.
-    const char null = '\0';
-    const char decimal = '.';
+    const char DECIMAL_POINT = '.';
+    const char NULL_CHAR = '\0';
 
-    char num_total_string[TWENTY];
-    double num_total_double;
-
-    // printf("Enter a number: ");
-    fgets(num_total_string, TWENTY, stdin);
+    char num_total_string[MAX_DIGITS];
+    int decimal_point_count = ZERO;
+    
+    fgets(num_total_string, MAX_DIGITS, stdin);
 
     // Validate input
-    int i = ZERO;
-    int decimal_point_count = ZERO;
-    while (num_total_string[i] != null) 
+    for (int i = ZERO; num_total_string[i] != NULL_CHAR; i++)
     {
         if (!isdigit(num_total_string[i]))
         {
-            if (num_total_string[i] == decimal)
+            if (num_total_string[i] == DECIMAL_POINT)
             {
                 decimal_point_count++;
-                if (decimal_point_count > ONE) 
+
+                if (decimal_point_count > ONE)
                 {
                     printf("\nInvalid: too many decimal points\n");
                     return ONE;
                 }
-                if (i == ZERO || !isdigit(num_total_string[i-ONE])) 
+
+                if (i == ZERO || !isdigit(num_total_string[i - ONE]))
                 {
                     printf("\nInvalid: decimal point in wrong position\n");
                     return ONE;
                 }
             }
-            else 
+            else
             {
                 printf("\nInvalid: non-numeric character detected\n");
                 return ONE;
             }
         }
-        i++;
     }
-
     return ZERO;
 }
+
+// Remember to free the returned string once done with it in the calling function.
 char* cs_to_string(int value)
 {
-    char *str = malloc(12);  // allocate enough memory for an int in string form
+    char *str = malloc(20);  // allocate enough memory for an int in string form
     sprintf(str, "%d", value);
     return str;
 }
@@ -221,10 +224,10 @@ char* cs_to_string(int value)
 /* C Sharp inspired linked list tools  */
 struct st_node* cs_list_split(const char* string, const char* delimiter)
 {
+    // Perhaps set up some error handling if the string is NULL, possibly in the calling function.
     char *string_copy = strdup(string); // Create a mutable copy of the string
-    if (!string_copy) {
+    if (!string_copy)
         return NULL; // Memory allocation failed
-    }
 
     struct st_node *head = NULL, *current = NULL, *new_node = NULL;
     char *token = strtok(string_copy, delimiter);
@@ -232,13 +235,15 @@ struct st_node* cs_list_split(const char* string, const char* delimiter)
     while (token != NULL)
     {
         new_node = malloc(sizeof(struct st_node));
-        if (!new_node) {
+        if (!new_node)
+        {
             // Handle memory allocation failure
             goto cleanup;
         }
 
         new_node->page = strdup(token);
-        if (!new_node->page) {
+        if (!new_node->page)
+        {
             // Handle memory allocation failure
             free(new_node);
             goto cleanup;
@@ -246,10 +251,13 @@ struct st_node* cs_list_split(const char* string, const char* delimiter)
 
         new_node->next = NULL;
 
-        if (current == NULL) {
+        if (current == NULL)
+        {
             head = new_node;
             current = head;
-        } else {
+        }
+        else
+        {
             current->next = new_node;
             current = new_node;
         }
@@ -351,7 +359,6 @@ struct st_node* cs_add(struct st_node* first)
     new_node->previous = first;
     
     new_node = cs_add_total(new_node);
-    printf("\nleft cs_add_node\n"); // delete line
     
     return new_node;    
 }
@@ -362,7 +369,6 @@ struct st_node* cs_node_intializer(struct st_node* current)
 
     if (current->total_nodes == ZERO)
     {
-        printf("\nindex == 0\nfirst->b_previous = false\n"); // delete line
         getchar(); // delete line
         current->b_previous = false;
         current->previous = NULL;
