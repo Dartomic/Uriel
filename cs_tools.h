@@ -4,6 +4,7 @@
 // File utilities
 char* cs_read_all_text(char* path);
 int cs_write_all_lines(char* path, struct st_node* output, int total_nodes);
+int cs_write_all_text(const char *filename, const char *text);
 char* cs_read_line();
 // char* cs_read_all_lines (char* path);
 int cs_file_exists(const char *filename);

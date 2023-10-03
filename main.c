@@ -6,9 +6,12 @@
 #include <time.h> 
 #include <stdbool.h>
 #include <math.h>
+#include <ctype.h>
 #include "struct_init.h"
 #include "struct_file.h"
 #include "cs_tools.h"
+
+#define _POSIX_C_SOURCE 200809L  // or another appropriate value
 
 // Constants
 #define ZERO_CHAR "0"
@@ -268,7 +271,7 @@ void start_up()
 
 void check_for_count()
 {
-    const int ZERO = 0;
+    // const int ZERO = 0;
     const int OPTION_TWO = 2; // this is the initialization option needed to get the file path
 
     struct st_string *c_course_count = malloc(sizeof(struct st_string));
@@ -290,7 +293,7 @@ void check_for_count()
     }
     
     // Try to read the text from the file
-    if ((c_course_count->string = read_all_text(file_strings.course_countfile)) != NULL)
+    if ((c_course_count->string = cs_read_all_text(file_strings.course_countfile)) != NULL)
     {
         i_course_count = atoi(c_course_count->string);
         globals.course_count = i_course_count;
@@ -298,9 +301,9 @@ void check_for_count()
     else
     {
         // If reading fails, initialize the file and try again
-        write_all_text(file_strings.course_countfile, "0");
+        cs_write_all_text(file_strings.course_countfile, "0");
         free(c_course_count->string); // Ensure the previous string is deallocated
-        c_course_count->string = read_all_text(file_strings.course_countfile);
+        c_course_count->string = cs_read_all_text(file_strings.course_countfile);
         
         if (c_course_count->string == NULL)
         {
@@ -425,32 +428,113 @@ void clear_and_print_date() {
 void selection_dialogs(int dialog)
 {
     // FIXME: ChatGPT cut many of the options out of the switch
-    const int ZERO = 0;
+    // const int ZERO = 0;
 
     switch (dialog)
     {
     case 1:
+        // For AvailableOptions()
+        //  Option 1 if no courses available
         cs_console_clear();
-        print_line_breaks(3);
-        printf("1: Exit the program\n2: Create a new course\n");
-        print_line_breaks(4);
-        printf("Enter an option from the menu: ");
+        printf("\n\n\n1: Exit the program");
+        printf("\n2: Create a new course\n");
+        printf("\n\n\n\nEnter an option from the menu: ");
         break;
     case 2:
-        clear_and_print_date();
-        print_line_breaks(3);
-        printf("1: Weekly Schedule\n2: Create a new course\n3: Study a course\n4: Force GlieCLI to use a different date\n5: Exit the program\n");
-        print_line_breaks(4);
-        printf("Select an option from the menu: ");
+        // For AvailableOptions()
+        //  Option 2 if courses are available
+        cs_console_clear();
+        printf("\nDate: %s", globals.the_date);
+        printf("\n\n\n1: Weekly Schedule");
+        printf("\n2: Create a new course");
+        printf("\n3: Study a course");
+        printf("\n4: Force GlieCLI to use a different date");
+        printf("\n5: Exit the program\n");
+        printf("\n\n\n\nSelect an option from the menu: ");
         break;
-    // Other case statements remain the same
+    case 3:
+        // For StudyCourse()
+        cs_console_clear();
+        printf("\n\n\n\nNothing left to study for current topic today.");
+        printf("\nEnter m to quit back to menu, or any other key to exit.");
+        globals.response = cs_read_line();
+        if (globals.response == "m")
+        {
+            cs_console_clear();
+            globals.made_select = false;
+            globals.new_left = ZERO;
+            globals.current_left = ZERO;
+            globals.late_left = ZERO;
+            return;
+        }
+        else
+        {
+            cs_console_clear();
+            exit(ZERO);
+        }
+        break;
+    case 4:
+        // For CreateCourse()
+        cs_console_clear();
+        printf("\n\n\n\n\n\nWhat is the name of the course? ");
+        globals.course_name = cs_read_line();
+        printf("\n\n\n\n\n\nHow many chapters are in the text book? ");
+        globals.course_chapters = cs_read_line();
+        creation_vars.chapters_int = atoi(globals.course_chapters);
+        break;
+    case 5:
+        // For SetupData()
+        printf("\n\n\n\n\n\nHow many sub-sections are in chapter %d: ", creation_vars.current_chapter); // Chapters are used here to make it easier to set the course up.
+        creation_vars.subsection_string = cs_read_line();
+        creation_vars.subsection_counter = atoi(creation_vars.subsection_string);
+        break;
+    case 6:
+        // For SetupData()
+        printf("\n\n\n\n\n\nHow many topics are in section %d.%d: ", creation_vars.current_chapter, creation_vars.current_subsection); // Chapters are used here to make it easier to set the course up.
+        creation_vars.topic_count_string = cs_read_line();
+        break;
+    case 7:
+        // For SetupData()
+        printf("\n\n\n\n\n\nEnter the quantity of questions for section %s: ", creation_vars.new_top_name);
+        creation_vars.p_count_string = cs_read_line();
+        break;
+    case 8:
+        // For UpdateCounts()
+        cs_console_clear();
+        printf("\nFinished updating CourseCount.txt");
+        cs_read_line();
+        cs_console_clear();
+        break;
+    case 9:
+        // For SelectCourse()
+        printf("\n\nEnter a Course ID: ");
+        break;
+    case 10:
+        // For StudyCourse()
+        study_hud();
+        break;
+    case 11:
+        // For StudyCourse()
+        printf("\n\n\nQuantity answered correctly, or option choice: ");
+        break;
+    case 12:
+        // For StudyCourse()
+        study_hud();
+        printf("\nInvalid Input:");
+        printf("\n\n\nvalue exceeds number of problems or questions, \nor it is less than zero.");
+        printf("\n\n\nQuantity answered correctly, or option choice: ");
+        break;
+    case 13:
+        // For WeeklySchedule()
+        weekly_dialog();
+        break;
     }
 } 
 
 void create_course()
 {
-    const int ZERO_INT = 0;
-    const char ZERO_CH = '0';
+    // const int ZERO_INT = 0;
+    char *ZERO_CH = "0";
     const int FOUR = 4;
     // increment the course count after the course file containing the topic names
     // is created AND/OR updated.
@@ -474,17 +558,17 @@ void create_course()
 void setup_data()
 {
     // Constants
-    const int ZERO_INT = 0;
-    const int ONE_INT = 1;
-    const int FIVE_INT = 5;
-    const int SIX_INT = 6;
-    const int SEVEN_INT = 7;
-    const double ZERO_DOUBLE = 0.0;
+    // const int ZERO_INT = 0;
+    // const int ONE_INT = 1;
+    // const int FIVE_INT = 5;
+    // const int SIX_INT = 6;
+    // const int SEVEN_INT = 7;
+    // const double ZERO_DOUBLE = 0.0;
 
     // Initialization
     struct st_node *topics = malloc(sizeof(struct st_node));
     topics->total_nodes = ZERO_INT;
-    topics = cs_node_initializer(topics);
+    topics = cs_node_intializer(topics);
 
     // For CreateCourse()
     while (creation_vars.chapter_loop < creation_vars.chapters_int)
